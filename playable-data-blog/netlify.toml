@@ -1,11 +1,13 @@
 [build]
-  command = "npm run build"
+  command = "node copy-package.js && node netlify.js && npm run build"
   publish = "dist"
   base = "."
 
 [build.environment]
   NODE_VERSION = "18"
-  NPM_FLAGS = "--legacy-peer-deps"
+  NPM_FLAGS = "--no-audit --prefer-offline"
+  NETLIFY_USE_YARN = "false"
+  CI = "true"
 
 # This ensures that all routes are handled properly
 [[redirects]]

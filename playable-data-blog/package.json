@@ -1,15 +1,16 @@
 {
   "name": "game-analytics-content-platform",
-  "type": "module",
+  "type": "commonjs",
   "version": "0.0.1",
   "private": true,
   "scripts": {
     "dev": "astro dev",
     "start": "astro dev",
-    "build": "node netlify-debug.js && astro build",
+    "build": "astro build",
     "preview": "astro preview",
     "astro": "astro",
-    "debug": "node netlify-debug.js"
+    "debug": "node netlify-debug.js",
+    "postinstall": "echo 'Postinstall completed successfully'"
   },
   "dependencies": {
     "@astrojs/mdx": "^1.1.5",
