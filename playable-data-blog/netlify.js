@@ -20,10 +20,10 @@ try {
 if (!fs.existsSync('./package.json')) {
   console.log('package.json not found in current directory. Creating it...');
   
-  // Define the contents of package.json
+  // Define the contents of package.json - note type is module for Astro
   const packageJson = {
     "name": "game-analytics-content-platform",
-    "type": "commonjs",
+    "type": "module",
     "version": "0.0.1",
     "private": true,
     "scripts": {
