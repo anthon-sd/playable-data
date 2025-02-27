@@ -1,0 +1,11 @@
+---
+import { signOut } from '../../utils/supabase';
+
+export const prerender = true;
+
+// Sign out the user
+await signOut();
+
+// Redirect to login page
+return Astro.redirect('/admin/login');
+---

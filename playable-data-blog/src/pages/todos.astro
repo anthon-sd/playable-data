@@ -1,0 +1,41 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { supabase } from '../db/supabase';
+
+// Fetch todos from Supabase
+let data = [];
+let error = null;
+
+try {
+  const response = await supabase.from("todos").select('*');
+  data = response.data || [];
+  error = response.error;
+} catch (e) {
+  console.error("Error fetching todos:", e);
+  error = e;
+}
+---
+
+<Layout title="Todos - Playable Data Blog">
+  <div class="container-custom py-12">
+    <h1 class="text-3xl font-bold mb-6">Todos</h1>
+    
+    {error && (
+      <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+        <p>Error loading todos: {error.message || "Unknown error"}</p>
+      </div>
+    )}
+    
+    {data.length > 0 ? (
+      <ul class="bg-white shadow-md rounded-lg p-6 space-y-2">
+        {data.map((entry) => (
+          <li class="p-2 border-b border-gray-100 last:border-0">
+            {entry.name || entry.title || "Unnamed todo"}
+          </li>
+        ))}
+      </ul>
+    ) : (
+      <p class="text-gray-500">No todos found. Create some in your Supabase dashboard!</p>
+    )}
+  </div>
+</Layout>

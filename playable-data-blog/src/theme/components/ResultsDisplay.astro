@@ -1,0 +1,64 @@
+---
+/**
+ * ResultsDisplay component for Astro
+ * A reusable component to display calculation results
+ */
+
+interface ResultItem {
+  label: string;
+  value: string | number;
+}
+
+interface Props {
+  title: string;
+  results: ResultItem[];
+  showDownload?: boolean;
+  className?: string;
+}
+
+const { title, results, showDownload = false, className = '' } = Astro.props;
+---
+
+<div class={`results-container ${className}`}>
+  <div class="flex justify-between items-center mb-4">
+    <h3 class="text-lg font-semibold text-blue-900">{title}</h3>
+    {showDownload && (
+      <button class="btn btn-primary download-btn">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+          <polyline points="7 10 12 15 17 10"></polyline>
+          <line x1="12" y1="15" x2="12" y2="3"></line>
+        </svg>
+        <span>Download Results</span>
+      </button>
+    )}
+  </div>
+
+  <div class="results-grid">
+    {results.map((item) => (
+      <div class="result-item">
+        <p class="result-label">{item.label}</p>
+        <p class="result-value">
+          {typeof item.value === 'number' 
+            ? new Intl.NumberFormat(undefined, { 
+                maximumFractionDigits: 2 
+              }).format(item.value)
+            : item.value}
+        </p>
+      </div>
+    ))}
+  </div>
+</div>
+
+<script>
+  // Add client-side functionality for the download button if needed
+  document.querySelectorAll('.download-btn').forEach(button => {
+    button.addEventListener('click', () => {
+      // Implement download functionality
+      const event = new CustomEvent('download-results', {
+        bubbles: true
+      });
+      button.dispatchEvent(event);
+    });
+  });
+</script>

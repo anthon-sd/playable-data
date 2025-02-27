@@ -1,0 +1,110 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { getArticles } from '../utils/supabase';
+import { formatDate } from '../utils/date';
+import FeaturedPost from '../components/FeaturedPost.astro';
+import BlogCard from '../components/BlogCard.astro';
+import NewsletterSignup from '../components/NewsletterSignup.astro';
+
+// Get all blog posts sorted by date
+let allPosts = [];
+try {
+  allPosts = await getArticles();
+} catch (error) {
+  console.error("Error fetching articles:", error);
+  // Provide fallback data if database query fails
+  allPosts = [];
+}
+
+const sortedPosts = allPosts.sort((a, b) => new Date(b.created_at).valueOf() - new Date(a.created_at).valueOf());
+
+// Get featured post
+const featuredPost = sortedPosts.find(post => post.featured);
+
+// Get remaining posts
+const remainingPosts = featuredPost 
+  ? sortedPosts.filter(post => post !== featuredPost)
+  : sortedPosts;
+
+// Get all unique tags
+const allTags = [...new Set(allPosts.flatMap(post => post.tags || []))].sort();
+
+// Convert database articles to the format expected by components
+function convertArticleToPost(article) {
+  return {
+    slug: article.slug,
+    data: {
+      title: article.title,
+      description: article.description,
+      pubDate: new Date(article.created_at),
+      updatedDate: article.updated_at ? new Date(article.updated_at) : undefined,
+      coverImage: article.cover_image,
+      author: {
+        name: article.author_name,
+        image: article.author_image
+      },
+      tags: article.tags,
+      featured: article.featured
+    }
+  };
+}
+---
+
+<Layout title="Playable Data Blog - Gaming Analytics Insights">
+  <div class="bg-black text-white">
+    <div class="container-custom py-16 md:py-20">
+      <h1 class="text-4xl md:text-5xl font-bold">Playable Data Blog</h1>
+      <p class="mt-4 text-xl text-accent-lighter max-w-3xl">
+Join us as we break down industry trends, discuss strategies, and explore data-related topics tailored for the gaming world.
+
+      </p>
+    </div>
+  </div>
+
+  <div class="container-custom py-12">
+    {featuredPost && (
+      <div class="mb-16">
+        <h2 class="text-2xl font-bold text-black mb-8">Featured Article</h2>
+        <FeaturedPost post={convertArticleToPost(featuredPost)} />
+      </div>
+    )}
+
+    <div class="flex flex-col md:flex-row gap-8">
+      <!-- Main content -->
+      <div class="md:w-3/4">
+        <h2 class="text-2xl font-bold text-black mb-8">Latest Articles</h2>
+        {remainingPosts.length > 0 ? (
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            {remainingPosts.map(post => (
+              <BlogCard post={convertArticleToPost(post)} />
+            ))}
+          </div>
+        ) : (
+          <div class="bg-white p-8 rounded-lg shadow-md text-center">
+            <p class="text-gray-600">No articles found. Check back soon for new content!</p>
+          </div>
+        )}
+      </div>
+
+      <!-- Sidebar -->
+      <div class="md:w-1/4">
+        <div class="card sticky top-24">
+          <h2 class="text-xl font-bold text-black mb-4">Topics</h2>
+          {allTags.length > 0 ? (
+            <div class="flex flex-wrap gap-2">
+              {allTags.map(tag => (
+                <a href={`/topics/${tag}`} class="text-sm bg-tint-20 hover:bg-tint-50 text-dark-1 px-3 py-1 rounded-full transition mb-2">
+                  #{tag}
+                </a>
+              ))}
+            </div>
+          ) : (
+            <p class="text-gray-600">No topics found.</p>
+          )}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <NewsletterSignup />
+</Layout>

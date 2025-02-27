@@ -1,0 +1,109 @@
+---
+/**
+ * AccordionSection component for Astro
+ * A reusable accordion component
+ */
+
+interface Props {
+  title: string;
+  iconName?: string;
+  defaultOpen?: boolean;
+  id: string;
+}
+
+const { title, iconName, defaultOpen = false, id } = Astro.props;
+
+// Simple icon mapping - expand as needed
+const iconMap = {
+  info: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>`,
+  help: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>`,
+  chevron: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>`
+};
+
+const iconSvg = iconName ? iconMap[iconName] : null;
+const contentId = `accordion-content-${id}`;
+const triggerId = `accordion-trigger-${id}`;
+---
+
+<div class="accordion">
+  <button
+    id={triggerId}
+    class="accordion-header"
+    aria-expanded={defaultOpen ? "true" : "false"}
+    aria-controls={contentId}
+  >
+    <div class="flex items-center gap-2">
+      {iconSvg && <div class="text-accent" set:html={iconSvg}></div>}
+      <h2 class="text-xl font-bold">{title}</h2>
+    </div>
+    <div class="chevron-icon" set:html={iconMap.chevron}></div>
+  </button>
+
+  <div
+    id={contentId}
+    class="accordion-content"
+    aria-labelledby={triggerId}
+    hidden={!defaultOpen}
+  >
+    <div class="p-6">
+      <slot />
+    </div>
+  </div>
+</div>
+
+<script define:vars={{ id: id }}>
+  // Client-side functionality for the accordion
+  document.addEventListener('DOMContentLoaded', () => {
+    const triggerId = `accordion-trigger-${id}`;
+    const contentId = `accordion-content-${id}`;
+    
+    const trigger = document.getElementById(triggerId);
+    const content = document.getElementById(contentId);
+    
+    if (trigger && content) {
+      trigger.addEventListener('click', () => {
+        const expanded = trigger.getAttribute('aria-expanded') === 'true';
+        trigger.setAttribute('aria-expanded', !expanded);
+        content.hidden = expanded;
+        
+        // Rotate chevron icon
+        const chevron = trigger.querySelector('.chevron-icon');
+        if (chevron) {
+          chevron.style.transform = expanded ? 'rotate(0deg)' : 'rotate(180deg)';
+          chevron.style.transition = 'transform 0.3s ease';
+        }
+        
+        // Track interaction if analytics is available
+        if (window.dataLayer) {
+          window.dataLayer.push({
+            event: 'accordion_interaction',
+            accordion_id: id,
+            action: expanded ? 'close' : 'open'
+          });
+        }
+      });
+    }
+  });
+</script>
+
+<style>
+  .accordion-content {
+    max-height: 0;
+    opacity: 0;
+    overflow: hidden;
+    transition: all 0.3s ease-in-out;
+  }
+  
+  .accordion-content:not([hidden]) {
+    max-height: 2000px;
+    opacity: 1;
+  }
+  
+  .chevron-icon {
+    transition: transform 0.3s ease;
+  }
+  
+  [aria-expanded="true"] .chevron-icon {
+    transform: rotate(180deg);
+  }
+</style>

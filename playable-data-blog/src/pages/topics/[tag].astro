@@ -1,0 +1,91 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { getArticles } from '../../utils/supabase';
+import { formatDate } from '../../utils/date';
+import BlogCard from '../../components/BlogCard.astro';
+
+export async function getStaticPaths() {
+  try {
+    const allPosts = await getArticles();
+    const uniqueTags = [...new Set(allPosts.flatMap(post => post.tags || []))];
+
+    return uniqueTags.map(tag => {
+      const filteredPosts = allPosts.filter(post => 
+        post.tags && post.tags.includes(tag)
+      );
+      return {
+        params: { tag },
+        props: { posts: filteredPosts, tag },
+      };
+    });
+  } catch (error) {
+    console.error("Error generating tag paths:", error);
+    // Return a placeholder path to prevent build failures
+    return [
+      {
+        params: { tag: 'placeholder' },
+        props: { posts: [], tag: 'placeholder' }
+      }
+    ];
+  }
+}
+
+const { posts, tag } = Astro.props;
+const sortedPosts = posts.sort((a, b) => new Date(b.created_at).valueOf() - new Date(a.created_at).valueOf());
+
+// Convert database articles to the format expected by components
+function convertArticleToPost(article) {
+  return {
+    slug: article.slug,
+    data: {
+      title: article.title,
+      description: article.description,
+      pubDate: new Date(article.created_at),
+      updatedDate: article.updated_at ? new Date(article.updated_at) : undefined,
+      coverImage: article.cover_image,
+      author: {
+        name: article.author_name,
+        image: article.author_image
+      },
+      tags: article.tags,
+      featured: article.featured
+    }
+  };
+}
+---
+
+<Layout title={`#${tag} - Playable Data Blog`}>
+  <div class="bg-black text-white">
+    <div class="container-custom py-16 md:py-20">
+      <div class="flex items-center gap-3 mb-2">
+        <a href="/blog" class="text-accent-lighter hover:text-white transition">Blog</a>
+        <span class="text-accent-light">/</span>
+        <span>Topic</span>
+      </div>
+      <h1 class="text-4xl md:text-5xl font-bold">#{tag}</h1>
+      <p class="mt-4 text-xl text-accent-lighter">
+        {posts.length} article{posts.length !== 1 ? 's' : ''}
+      </p>
+    </div>
+  </div>
+
+  <div class="container-custom py-12">
+    {sortedPosts.length > 0 ? (
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        {sortedPosts.map(post => (
+          <BlogCard post={convertArticleToPost(post)} />
+        ))}
+      </div>
+    ) : (
+      <div class="bg-white p-8 rounded-lg shadow-md text-center">
+        <p class="text-gray-600">No articles found with this topic. Check back soon for new content!</p>
+      </div>
+    )}
+
+    <div class="mt-12 text-center">
+      <a href="/blog" class="btn btn-outline inline-flex items-center justify-center px-6 py-3">
+        Back to All Articles
+      </a>
+    </div>
+  </div>
+</Layout>

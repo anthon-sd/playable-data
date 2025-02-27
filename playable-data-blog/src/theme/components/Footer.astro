@@ -1,0 +1,42 @@
+---
+/**
+ * Footer component for Astro
+ * A reusable footer component
+ */
+
+interface FooterLink {
+  label: string;
+  href: string;
+}
+
+interface Props {
+  companyName: string;
+  year?: number;
+  links?: FooterLink[];
+}
+
+const { companyName, year = new Date().getFullYear(), links = [] } = Astro.props;
+---
+
+<footer class="footer">
+  <div class=" <div class="container-custom">
+    <div class="flex flex-col md:flex-row justify-between items-center gap-4">
+      <p class="text-gray-600">
+        © {year} {companyName}. All rights reserved.
+      </p>
+      
+      {links.length > 0 && (
+        <nav class="flex gap-6">
+          {links.map((link) => (
+            <a
+              href={link.href}
+              class="text-gray-600 hover:text-primary transition-colors"
+            >
+              {link.label}
+            </a>
+          ))}
+        </nav>
+      )}
+    </div>
+  </div>
+</footer>

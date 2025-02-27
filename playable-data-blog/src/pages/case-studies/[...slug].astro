@@ -1,0 +1,130 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { getArticleById } from '../../utils/supabase';
+import { getContent } from '../../utils/storage';
+import { formatDate } from '../../utils/date';
+import { marked } from 'marked';
+
+export async function getStaticPaths() {
+  return [
+    { params: { slug: 'placeholder' } }
+  ];
+}
+
+const { slug } = Astro.params;
+
+// Get the article from database
+let article;
+let content;
+
+try {
+  article = await getArticleById(slug);
+  
+  // Try to get content from storage
+  try {
+    const storageContent = await getContent(slug);
+    if (storageContent) {
+      content = storageContent.content;
+    } else {
+      content = article.content;
+    }
+  } catch (error) {
+    console.log('Content not found in storage, using database content');
+    content = article.content;
+  }
+} catch (error) {
+  // If article not found, use placeholder content
+  article = {
+    title: 'Placeholder Case Study',
+    description: 'This is a placeholder case study',
+    created_at: new Date().toISOString(),
+    tags: ['placeholder', 'case-study'],
+    slug: 'placeholder'
+  };
+  content = '# Placeholder Case Study\n\nThis is a placeholder case study.';
+}
+
+// Parse markdown content
+const htmlContent = marked.parse(content || '');
+
+// Extract metadata
+const title = article?.title || 'Case Study';
+const description = article?.description || '';
+const pubDate = article?.created_at ? new Date(article.created_at) : new Date();
+const client = article?.client || '';
+const industry = article?.tags?.find(tag => tag !== 'case-study') || 'Technology';
+const coverImage = article?.cover_image || '';
+const technologies = article?.tags?.filter(tag => tag !== 'case-study') || [];
+---
+
+<Layout title={`${title} - Case Study`} description={description}>
+  <article>
+    <!-- Header -->
+    <div class="bg-gradient-to-r from-primary-700 to-primary-900 text-white">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-20">
+        <div class="max-w-3xl">
+          <div class="flex items-center gap-3 mb-4">
+            <span class="text-sm bg-primary-600 bg-opacity-30 text-white px-3 py-1 rounded-full">
+              {industry}
+            </span>
+            <span class="text-primary-100">
+              Client: {client}
+            </span>
+          </div>
+          <h1 class="text-3xl md:text-5xl font-bold mb-6">{title}</h1>
+          <p class="text-xl text-primary-100">{description}</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Content -->
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      {coverImage && (
+        <div class="mb-10">
+          <img 
+            src={coverImage} 
+            alt={`Cover image for ${title}`} 
+            class="w-full h-auto rounded-lg shadow-md object-cover max-h-[500px]"
+          />
+        </div>
+      )}
+
+      <div class="bg-white rounded-lg shadow-sm p-6 mb-8">
+        <div class="flex flex-wrap gap-3 mb-4">
+          <div class="flex items-center">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+            <span class="text-gray-600">{formatDate(pubDate)}</span>
+          </div>
+          <div class="flex items-center">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+            </svg>
+            <span class="text-gray-600">{industry}</span>
+          </div>
+        </div>
+
+        <h2 class="text-lg font-semibold text-gray-900 mb-2">Technologies Used:</h2>
+        <div class="flex flex-wrap gap-2 mb-4">
+          {technologies.map(tech => (
+            <span class="bg-gray-100 text-gray-700 text-sm px-3 py-1 rounded-full">
+              {tech}
+            </span>
+          ))}
+        </div>
+      </div>
+
+      <div class="prose prose-lg max-w-none">
+        <div set:html={htmlContent} />
+      </div>
+
+      <div class="mt-12 border-t border-gray-200 pt-8">
+        <h2 class="text-2xl font-bold text-gray-900 mb-6">Ready to achieve similar results?</h2>
+        <a href="/contact" class="inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 transition">
+          Contact Us Today
+        </a>
+      </div>
+    </div>
+  </article>
+</Layout>

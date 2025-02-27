@@ -1,0 +1,219 @@
+---
+const { id, name, value, rows = 15, required = false } = Astro.props;
+---
+
+<div class="rich-text-editor border border-gray-300 rounded-md overflow-hidden">
+  <div class="toolbar bg-gray-100 border-b border-gray-300 p-2 flex justify-between items-center">
+    <div class="flex flex-wrap gap-1">
+      <button type="button" class="editor-btn" data-format="h1" title="Heading 1">
+        <span class="font-bold">H1</span>
+      </button>
+      <button type="button" class="editor-btn" data-format="h2" title="Heading 2">
+        <span class="font-bold">H2</span>
+      </button>
+      <button type="button" class="editor-btn" data-format="h3" title="Heading 3">
+        <span class="font-bold">H3</span>
+      </button>
+      <button type="button" class="editor-btn" data-format="bold" title="Bold">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 12h12M12 6v12" />
+        </svg>
+      </button>
+      <button type="button" class="editor-btn" data-format="italic" title="Italic">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7" />
+        </svg>
+      </button>
+      <button type="button" class="editor-btn" data-format="link" title="Link">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101" />
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.172 13.828a4 4 0 005.656 0l4-4a4 4 0 10-5.656-5.656l-1.102 1.101" />
+        </svg>
+      </button>
+      <button type="button" class="editor-btn" data-format="ul" title="Unordered List">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+        </svg>
+      </button>
+      <button type="button" class="editor-btn" data-format="ol" title="Ordered List">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
+        </svg>
+      </button>
+      <button type="button" class="editor-btn" data-format="code" title="Code Block">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+        </svg>
+      </button>
+      <button type="button" class="editor-btn" data-format="quote" title="Blockquote">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
+        </svg>
+      </button>
+      <button type="button" class="editor-btn" data-format="hr" title="Horizontal Rule">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14" />
+        </svg>
+      </button>
+    </div>
+    <div>
+      <button type="button" class="editor-btn" id="preview-toggle" title="Preview">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+        </svg>
+      </button>
+    </div>
+  </div>
+  <textarea 
+    id={id} 
+    name={name} 
+    rows={rows} 
+    required={required} 
+    class="form-textarea border-0 rounded-none focus:ring-0 w-full editor-textarea"
+  >{value}</textarea>
+  <div id="preview-content" class="p-4 prose max-w-none hidden preview-content"></div>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const editorButtons = document.querySelectorAll('.editor-btn');
+    const previewToggle = document.getElementById('preview-toggle');
+    const previewContent = document.getElementById('preview-content');
+    
+    // Format buttons
+    editorButtons.forEach(button => {
+      if (button.id !== 'preview-toggle') {
+        button.addEventListener('click', () => {
+          const format = button.dataset.format;
+          const textarea = button.closest('.rich-text-editor').querySelector('textarea');
+          const start = textarea.selectionStart;
+          const end = textarea.selectionEnd;
+          const selectedText = textarea.value.substring(start, end);
+          
+          let formattedText = '';
+          let cursorOffset = 0;
+          
+          switch (format) {
+            case 'h1':
+              formattedText = `# ${selectedText}`;
+              cursorOffset = selectedText ? 0 : 2;
+              break;
+            case 'h2':
+              formattedText = `## ${selectedText}`;
+              cursorOffset = selectedText ? 0 : 3;
+              break;
+            case 'h3':
+              formattedText = `### ${selectedText}`;
+              cursorOffset = selectedText ? 0 : 4;
+              break;
+            case 'bold':
+              formattedText = `**${selectedText}**`;
+              cursorOffset = selectedText ? 0 : 2;
+              break;
+            case 'italic':
+              formattedText = `*${selectedText}*`;
+              cursorOffset = selectedText ? 0 : 1;
+              break;
+            case 'link':
+              formattedText = `[${selectedText}](url)`;
+              cursorOffset = selectedText ? 3 : 1;
+              break;
+            case 'ul':
+              formattedText = `- ${selectedText}`;
+              cursorOffset = selectedText ? 0 : 2;
+              break;
+            case 'ol':
+              formattedText = `1. ${selectedText}`;
+              cursorOffset = selectedText ? 0 : 3;
+              break;
+            case 'code':
+              formattedText = `\`\`\`\n${selectedText}\n\`\`\``;
+              cursorOffset = selectedText ? 0 : 4;
+              break;
+            case 'quote':
+              formattedText = `> ${selectedText}`;
+              cursorOffset = selectedText ? 0 : 2;
+              break;
+            case 'hr':
+              formattedText = `\n---\n`;
+              cursorOffset = 4;
+              break;
+            default:
+              formattedText = selectedText;
+          }
+          
+          textarea.value = textarea.value.substring(0, start) + formattedText + textarea.value.substring(end);
+          textarea.focus();
+          
+          if (selectedText) {
+            textarea.selectionStart = start;
+            textarea.selectionEnd = start + formattedText.length;
+          } else {
+            textarea.selectionStart = start + formattedText.length - cursorOffset;
+            textarea.selectionEnd = start + formattedText.length - cursorOffset;
+          }
+        });
+      }
+    });
+    
+    // Preview toggle
+    if (previewToggle && previewContent) {
+      previewToggle.addEventListener('click', () => {
+        const textarea = previewToggle.closest('.rich-text-editor').querySelector('textarea');
+        
+        if (previewContent.classList.contains('hidden')) {
+          // Show preview
+          previewContent.classList.remove('hidden');
+          textarea.classList.add('hidden');
+          
+          // Convert markdown to HTML
+          try {
+            // Use marked if available, otherwise use a simple converter
+            if (typeof marked !== 'undefined') {
+              previewContent.innerHTML = marked.parse(textarea.value);
+            } else {
+              // Simple markdown to HTML conversion
+              let html = textarea.value
+                .replace(/^# (.*$)/gm, '<h1>$1</h1>')
+                .replace(/^## (.*$)/gm, '<h2>$1</h2>')
+                .replace(/^### (.*$)/gm, '<h3>$1</h3>')
+                .replace(/\*\*(.*)\*\*/gm, '<strong>$1</strong>')
+                .replace(/\*(.*)\*/gm, '<em>$1</em>')
+                .replace(/\[(.*?)\]\((.*?)\)/gm, '<a href="$2">$1</a>')
+                .replace(/^- (.*$)/gm, '<li>$1</li>')
+                .replace(/^(\d+)\. (.*$)/gm, '<li>$2</li>')
+                .replace(/\n/gm, '<br>');
+              
+              previewContent.innerHTML = html;
+            }
+          } catch (e) {
+            previewContent.innerHTML = '<p>Error rendering preview</p>';
+            console.error('Preview error:', e);
+          }
+        } else {
+          // Hide preview
+          previewContent.classList.add('hidden');
+          textarea.classList.remove('hidden');
+        }
+      });
+    }
+  });
+</script>
+
+<style>
+  .editor-btn {
+    @apply p-1.5 rounded hover:bg-gray-200 transition-colors flex items-center justify-center;
+  }
+  
+  .preview-content {
+    min-height: 200px;
+  }
+  
+  .editor-textarea {
+    min-height: 200px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    line-height: 1.5;
+    tab-size: 2;
+  }
+</style>
