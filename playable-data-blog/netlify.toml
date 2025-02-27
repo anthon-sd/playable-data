@@ -1,11 +1,16 @@
 [build]
-  command = "node netlify-bootstrap.js"
+  command = "npm run build"
   publish = "dist"
   base = "playable-data-blog"
 
 [build.environment]
   NODE_VERSION = "18"
   NPM_FLAGS = "--legacy-peer-deps"
+  # Explicitly disable Ruby
+  RUBY_VERSION = "0"
+  NETLIFY_USE_RUBY = "false"
+  # Force Netlify to detect this as a Node.js project
+  NETLIFY_EXPERIMENTAL_BUILD_NODEJS_ONLY = "true"
 
 # This ensures that all routes are handled properly
 [[redirects]]
