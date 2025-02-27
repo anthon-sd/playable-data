@@ -1,23 +1,29 @@
 #!/usr/bin/env node
 
 // This is a special helper script to debug and fix Netlify build issues
-const fs = require('fs');
-const path = require('path');
-const { execSync } = require('child_process');
+import { createRequire } from 'module';
+const require = createRequire(import.meta.url);
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
+import { readFileSync, writeFileSync, existsSync, readdirSync } from 'fs';
+import { execSync } from 'child_process';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 // Log environment details
 console.log('=== NETLIFY BUILD HELPER ===');
 console.log('Current directory:', process.cwd());
 console.log('Directory contents:');
 try {
-  const files = fs.readdirSync('.');
+  const files = readdirSync('.');
   console.log(files.join('\n'));
 } catch (error) {
   console.error('Error listing directory:', error);
 }
 
 // Create package.json if it doesn't exist in the build directory
-if (!fs.existsSync('./package.json')) {
+if (!existsSync('./package.json')) {
   console.log('package.json not found in current directory. Creating it...');
   
   // Define the contents of package.json - note type is module for Astro
@@ -29,7 +35,7 @@ if (!fs.existsSync('./package.json')) {
     "scripts": {
       "dev": "astro dev",
       "start": "astro dev",
-      "build": "astro build",
+      "build": "node diagnose-build.js && astro build || node fallback-build.js",
       "preview": "astro preview",
       "astro": "astro",
       "postinstall": "echo 'Postinstall completed successfully'"
@@ -53,7 +59,7 @@ if (!fs.existsSync('./package.json')) {
   };
   
   // Write the package.json file
-  fs.writeFileSync('./package.json', JSON.stringify(packageJson, null, 2));
+  writeFileSync('./package.json', JSON.stringify(packageJson, null, 2));
   console.log('Created package.json file');
 } else {
   console.log('package.json found in current directory');
@@ -62,7 +68,7 @@ if (!fs.existsSync('./package.json')) {
 // Run npm commands
 try {
   console.log('Installing dependencies...');
-  execSync('npm install', { stdio: 'inherit' });
+  execSync('npm install --legacy-peer-deps', { stdio: 'inherit' });
   console.log('Dependencies installed successfully');
 } catch (error) {
   console.error('Error installing dependencies:', error);

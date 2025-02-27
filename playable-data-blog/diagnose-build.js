@@ -3,8 +3,8 @@
 /**
  * This script checks for common Astro build issues
  */
-const fs = require('fs');
-const path = require('path');
+import fs from 'fs';
+import path from 'path';
 
 console.log('=== ASTRO BUILD DIAGNOSTICS ===');
 

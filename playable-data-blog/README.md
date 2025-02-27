@@ -84,3 +84,60 @@ The admin dashboard is available at `/admin/` and provides the following feature
 ## License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
+
+# Playable Data Content Platform
+
+This repository contains the Astro-based content platform for Playable Data.
+
+## Development
+
+To run the project locally:
+
+```bash
+npm install
+npm run dev
+```
+
+## Deployment on Netlify
+
+The site is configured for deployment on Netlify with the following setup:
+
+### Build Settings
+
+- **Build command**: `npm run build`
+- **Publish directory**: `dist`
+- **Node version**: 18 or higher
+
+### Troubleshooting Deployment Issues
+
+If you encounter build failures on Netlify, check the following:
+
+1. **Module Type**: Ensure `package.json` has `"type": "module"` (required for Astro)
+2. **Script Permissions**: All scripts should be executable (`chmod +x *.js`)
+3. **Build Command**: The build command in Netlify UI should match what's in `netlify.toml`
+4. **Diagnostic Tools**: Run `node diagnose-build.js` locally to check for issues
+
+### Fallback System
+
+The project includes a fallback build system that creates a minimal static site if the main Astro build fails. This ensures that at least a basic site is deployed rather than having a completely failed build.
+
+### Emergency Fix for a Failed Build
+
+If the build is consistently failing, you can:
+
+1. Update the build command in Netlify UI to `node fallback-build.js`
+2. This will deploy a minimal placeholder site until you can resolve the underlying issues
+
+## Project Structure
+
+- `src/`: Source code for the Astro site
+- `public/`: Static assets
+- `diagnose-build.js`: Script to diagnose common build issues
+- `fallback-build.js`: Emergency fallback build script
+- `prepare-netlify-build.js`: Prepares the environment for Netlify builds
+- `netlify.js`: Helper script for Netlify builds
+- `netlify.toml`: Netlify configuration file
+
+## Required Node Version
+
+Node 18 or higher is required for this project.

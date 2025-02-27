@@ -4,8 +4,8 @@
  * EMERGENCY FALLBACK BUILD SCRIPT
  * This will create a minimal static site if the Astro build fails
  */
-const fs = require('fs');
-const path = require('path');
+import fs from 'fs';
+import path from 'path';
 
 console.log('=== EMERGENCY FALLBACK BUILD ===');
 console.log('Normal build failed. Creating minimal static site...');
