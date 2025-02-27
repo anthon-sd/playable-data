@@ -5,7 +5,7 @@
 When setting up this project in Netlify, ensure these UI settings match exactly:
 
 1. **Base directory**: `playable-data-blog`
-2. **Build command**: `npm run build`
+2. **Build command**: `node netlify-bootstrap.cjs`
 3. **Publish directory**: `dist`
 
 ## Why This Matters
@@ -13,6 +13,24 @@ When setting up this project in Netlify, ensure these UI settings match exactly:
 Netlify prioritizes UI settings over what's in the `netlify.toml` file. If there's a mismatch, the build will fail.
 
 ## Troubleshooting Build Failures
+
+### Missing Deployment Directory
+
+If you see the error: `The build failed because the deploy directory 'playable-data-blog/dist' does not exist`, this means Netlify built your project but couldn't find the directory with the output files.
+
+#### Steps to Fix:
+
+This has been addressed by:
+1. Updating the bootstrap script to detect the correct output path that Netlify expects
+2. Ensuring the built files are copied from the build location to the expected Netlify deploy directory
+3. Creating fallback content in the correct location if the main build fails
+
+The issue occurs because Netlify builds in one directory (`/opt/build/repo`) but looks for output in another directory (`playable-data-blog/dist`) based on your configuration.
+
+If you continue to see this error:
+1. Verify the `publish` directory in netlify.toml matches the UI setting
+2. Check that the `base` directory in netlify.toml matches the UI setting
+3. Confirm that the `netlify-bootstrap.cjs` script is in the repository root
 
 ### Package.json Not Found
 
@@ -108,11 +126,12 @@ This approach works because:
 Our solution works by:
 
 1. Setting the correct base directory so Netlify knows where your project lives
-2. Using the `package.json` build script to run our bootstrap script
-3. The bootstrap script ensures all necessary files are in the right places
-4. If the main build fails, a fallback site is generated
-5. Multiple configuration files ensure Netlify correctly identifies this as a Node.js project
-6. Explicit version files for Node.js, Ruby, and Python prevent environment detection issues
-7. Proper format for each version specification prevents cross-language confusion
+2. Using the bootstrap script to ensure all necessary files are in the right places
+3. Building the site in the Netlify build directory
+4. Copying the built files to the location Netlify expects based on your configuration
+5. If the main build fails, a fallback site is generated in the correct location
+6. Multiple configuration files ensure Netlify correctly identifies this as a Node.js project
+7. Explicit version files for Node.js, Ruby, and Python prevent environment detection issues
+8. Proper format for each version specification prevents cross-language confusion
 
 Remember: Any changes to build settings should be made in both the Netlify UI and the `netlify.toml` file to avoid confusion. 

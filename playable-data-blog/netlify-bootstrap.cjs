@@ -36,6 +36,10 @@ try {
 const REPO_DIR = '/opt/build/repo';
 console.log('Repository directory:', REPO_DIR);
 
+// This is where Netlify expects to find the built files based on netlify.toml
+const EXPECTED_OUTPUT_DIR = path.join(currentDir, 'dist');
+console.log('Expected output directory:', EXPECTED_OUTPUT_DIR);
+
 // Determine if we're in a subdirectory or not
 const isInSubdir = currentDir.includes('playable-data-blog') || 
                   fs.existsSync(path.join(currentDir, 'package.json'));
@@ -169,23 +173,17 @@ try {
   process.exit(1);
 }
 
-// Run the build
-try {
-  console.log('Running build...');
-  execSync('cd ' + REPO_DIR + ' && npm run build --no-warnings', { stdio: 'inherit' });
-  console.log('Build completed successfully');
-} catch (error) {
-  console.error('Build failed:', error.message);
-  // Create emergency fallback site
-  try {
-    console.log('Creating emergency fallback site...');
-    // Create dist directory if it doesn't exist
-    if (!fs.existsSync(path.join(REPO_DIR, 'dist'))) {
-      fs.mkdirSync(path.join(REPO_DIR, 'dist'), { recursive: true });
-    }
-    
-    // Create a simple index.html file
-    const indexHtml = \`<!DOCTYPE html>
+// Create emergency fallback site content
+const createFallbackSite = () => {
+  console.log('Creating emergency fallback site...');
+  
+  // Create dist directory if it doesn't exist
+  if (!fs.existsSync(EXPECTED_OUTPUT_DIR)) {
+    fs.mkdirSync(EXPECTED_OUTPUT_DIR, { recursive: true });
+  }
+  
+  // Create a simple index.html file
+  const indexHtml = \`<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -230,11 +228,11 @@ try {
   </div>
 </body>
 </html>\`;
-    fs.writeFileSync(path.join(REPO_DIR, 'dist', 'index.html'), indexHtml);
-    console.log('Created fallback index.html');
-    
-    // Create a 404 page
-    const notFoundHtml = \`<!DOCTYPE html>
+  fs.writeFileSync(path.join(EXPECTED_OUTPUT_DIR, 'index.html'), indexHtml);
+  console.log('Created fallback index.html in', EXPECTED_OUTPUT_DIR);
+  
+  // Create a 404 page
+  const notFoundHtml = \`<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -295,13 +293,51 @@ try {
   </div>
 </body>
 </html>\`;
-    fs.writeFileSync(path.join(REPO_DIR, 'dist', '404.html'), notFoundHtml);
-    console.log('Created fallback 404.html');
+  fs.writeFileSync(path.join(EXPECTED_OUTPUT_DIR, '404.html'), notFoundHtml);
+  console.log('Created fallback 404.html in', EXPECTED_OUTPUT_DIR);
+  
+  return true;
+};
+
+// Run the build
+try {
+  console.log('Running build...');
+  execSync('cd ' + REPO_DIR + ' && npm run build --no-warnings', { stdio: 'inherit' });
+  console.log('Build completed successfully');
+  
+  // Check if the build created dist directory in REPO_DIR
+  if (fs.existsSync(path.join(REPO_DIR, 'dist'))) {
+    // Ensure the expected output directory exists
+    if (!fs.existsSync(EXPECTED_OUTPUT_DIR)) {
+      fs.mkdirSync(EXPECTED_OUTPUT_DIR, { recursive: true });
+    } else {
+      // Clean the directory first
+      try {
+        execSync(\`rm -rf \${EXPECTED_OUTPUT_DIR}/*\`, { stdio: 'inherit' });
+      } catch (cleanError) {
+        console.error('Error cleaning expected output directory:', cleanError.message);
+      }
+    }
+    
+    // Copy the build output to the expected location
+    console.log(\`Copying build output from \${path.join(REPO_DIR, 'dist')} to \${EXPECTED_OUTPUT_DIR}\`);
+    execSync(\`cp -r \${path.join(REPO_DIR, 'dist')}/* \${EXPECTED_OUTPUT_DIR}/\`, { stdio: 'inherit' });
+    console.log('Successfully copied build output to the expected location');
+  } else {
+    console.error('Build completed but dist directory not found in REPO_DIR');
+    createFallbackSite();
+  }
+} catch (error) {
+  console.error('Build failed:', error.message);
+  // Create emergency fallback site
+  try {
+    createFallbackSite();
   } catch (fallbackError) {
     console.error('Failed to create fallback site:', fallbackError.message);
   }
   
-  process.exit(0); // Still exit with success so Netlify will deploy the fallback
+  // Exit with success so Netlify will still deploy the fallback
+  process.exit(0);
 }
 
 console.log('=== BOOTSTRAP COMPLETE ===');
