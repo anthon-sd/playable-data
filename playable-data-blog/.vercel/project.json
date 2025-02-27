@@ -1,13 +1,13 @@
 {
-  "projectId": "prj_your_project_id",
-  "orgId": "org_your_org_id",
+  "projectId": "prj_vercel_project_id",
+  "orgId": "team_vercel_org_id",
   "settings": {
     "framework": "astro",
-    "buildCommand": "npm run build",
-    "devCommand": "npm run dev",
-    "installCommand": "npm install",
+    "buildCommand": null,
+    "devCommand": null,
+    "installCommand": null,
     "outputDirectory": "dist",
     "directoryListing": false,
-    "rootDirectory": null
+    "rootDirectory": ""
   }
 } 
