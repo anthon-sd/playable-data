@@ -175,20 +175,20 @@ try {
 
 // Create emergency fallback site content
 const createFallbackSite = () => {
-  console.log('Creating emergency fallback site...');
+  console.log('Creating minimal error page instead of full fallback site');
   
   // Create dist directory if it doesn't exist
   if (!fs.existsSync(EXPECTED_OUTPUT_DIR)) {
     fs.mkdirSync(EXPECTED_OUTPUT_DIR, { recursive: true });
   }
   
-  // Create a simple index.html file
+  // Create a minimal error page
   const indexHtml = \`<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Playable Data - Temporary Page</title>
+  <title>Build Error - Playable Data</title>
   <style>
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
@@ -198,11 +198,11 @@ const createFallbackSite = () => {
       margin: 0 auto;
       padding: 2rem;
     }
-    h1 { color: #2563eb; }
-    .message { 
-      background: #f3f4f6; 
-      padding: 1.5rem;
-      border-radius: 0.5rem;
+    h1 { color: #e11d48; }
+    .error { 
+      background: #fef2f2; 
+      border-left: 4px solid #e11d48;
+      padding: 1rem 1.5rem;
       margin: 2rem 0;
     }
     .footer { 
@@ -215,23 +215,21 @@ const createFallbackSite = () => {
   </style>
 </head>
 <body>
-  <h1>Playable Data</h1>
+  <h1>Build Error</h1>
   
-  <div class="message">
-    <h2>We're working on updates</h2>
-    <p>Our site is currently being updated with new content and features. Please check back soon!</p>
-    <p>In the meantime, you can contact us at <a href="mailto:contact@playabledata.io">contact@playabledata.io</a>.</p>
+  <div class="error">
+    <p>The site build process encountered an error. Please check the build logs for details.</p>
   </div>
   
   <div class="footer">
-    <p>&copy; \${new Date().getFullYear()} Playable Data. All rights reserved.</p>
+    <p>&copy; \${new Date().getFullYear()} Playable Data</p>
   </div>
 </body>
 </html>\`;
   fs.writeFileSync(path.join(EXPECTED_OUTPUT_DIR, 'index.html'), indexHtml);
-  console.log('Created fallback index.html in', EXPECTED_OUTPUT_DIR);
+  console.log('Created minimal error page in', EXPECTED_OUTPUT_DIR);
   
-  // Create a 404 page
+  // Create a minimal 404 page
   const notFoundHtml = \`<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -248,27 +246,19 @@ const createFallbackSite = () => {
       padding: 2rem;
       text-align: center;
     }
-    h1 { color: #2563eb; }
+    h1 { color: #e11d48; }
     .error-code {
-      font-size: 6rem;
+      font-size: 4rem;
       font-weight: bold;
       color: #d1d5db;
       margin: 0;
     }
-    .message { 
-      background: #f3f4f6; 
-      padding: 1.5rem;
-      border-radius: 0.5rem;
+    .error { 
+      background: #fef2f2; 
+      border-left: 4px solid #e11d48;
+      padding: 1rem 1.5rem;
       margin: 2rem 0;
-    }
-    .home-link {
-      display: inline-block;
-      margin-top: 1rem;
-      padding: 0.5rem 1rem;
-      background: #2563eb;
-      color: white;
-      text-decoration: none;
-      border-radius: 0.25rem;
+      text-align: left;
     }
     .footer { 
       margin-top: 3rem;
@@ -283,18 +273,17 @@ const createFallbackSite = () => {
   <p class="error-code">404</p>
   <h1>Page Not Found</h1>
   
-  <div class="message">
-    <p>The page you're looking for doesn't exist or has been moved.</p>
-    <a href="/" class="home-link">Go to Homepage</a>
+  <div class="error">
+    <p>The requested page could not be found.</p>
   </div>
   
   <div class="footer">
-    <p>&copy; \${new Date().getFullYear()} Playable Data. All rights reserved.</p>
+    <p>&copy; \${new Date().getFullYear()} Playable Data</p>
   </div>
 </body>
 </html>\`;
   fs.writeFileSync(path.join(EXPECTED_OUTPUT_DIR, '404.html'), notFoundHtml);
-  console.log('Created fallback 404.html in', EXPECTED_OUTPUT_DIR);
+  console.log('Created minimal 404 page in', EXPECTED_OUTPUT_DIR);
   
   return true;
 };

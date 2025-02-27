@@ -23,7 +23,7 @@ If you see the error: `The build failed because the deploy directory 'playable-d
 This has been addressed by:
 1. Updating the bootstrap script to detect the correct output path that Netlify expects
 2. Ensuring the built files are copied from the build location to the expected Netlify deploy directory
-3. Creating fallback content in the correct location if the main build fails
+3. Creating minimal error pages in the correct location if the main build fails
 
 The issue occurs because Netlify builds in one directory (`/opt/build/repo`) but looks for output in another directory (`playable-data-blog/dist`) based on your configuration.
 
@@ -129,7 +129,7 @@ Our solution works by:
 2. Using the bootstrap script to ensure all necessary files are in the right places
 3. Building the site in the Netlify build directory
 4. Copying the built files to the location Netlify expects based on your configuration
-5. If the main build fails, a fallback site is generated in the correct location
+5. If the main build fails, a minimal error page is generated in the correct location
 6. Multiple configuration files ensure Netlify correctly identifies this as a Node.js project
 7. Explicit version files for Node.js, Ruby, and Python prevent environment detection issues
 8. Proper format for each version specification prevents cross-language confusion
