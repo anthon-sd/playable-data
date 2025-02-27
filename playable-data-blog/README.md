@@ -104,18 +104,34 @@ The site is configured for deployment on Netlify with the following setup:
 
 ### Build Settings
 
-- **Build command**: `npm run build`
+- **Build command**: `node netlify-bootstrap.js`
 - **Publish directory**: `dist`
+- **Base directory**: `playable-data-blog`
 - **Node version**: 18 or higher
+
+### Important Note About Repository Structure
+
+This project has the following repository structure:
+```
+playable-data/
+└── playable-data-blog/  <-- This is the actual project directory
+    ├── src/
+    ├── public/
+    ├── package.json
+    └── etc...
+```
+
+For this reason, the `base` setting in `netlify.toml` is set to `playable-data-blog`. This tells Netlify that the actual project is in this subdirectory, not in the root of the repository.
 
 ### Troubleshooting Deployment Issues
 
 If you encounter build failures on Netlify, check the following:
 
-1. **Module Type**: Ensure `package.json` has `"type": "module"` (required for Astro)
-2. **Script Permissions**: All scripts should be executable (`chmod +x *.js`)
-3. **Build Command**: The build command in Netlify UI should match what's in `netlify.toml`
-4. **Diagnostic Tools**: Run `node diagnose-build.js` locally to check for issues
+1. **Base Directory**: Ensure the `base` setting in `netlify.toml` matches the directory where your project is located
+2. **Module Type**: Ensure `package.json` has `"type": "module"` (required for Astro)
+3. **Script Permissions**: All scripts should be executable (`chmod +x *.js`)
+4. **Build Command**: The build command in Netlify UI should match what's in `netlify.toml`
+5. **Diagnostic Tools**: Run `node diagnose-build.js` locally to check for issues
 
 ### Fallback System
 
@@ -135,7 +151,7 @@ If the build is consistently failing, you can:
 - `diagnose-build.js`: Script to diagnose common build issues
 - `fallback-build.js`: Emergency fallback build script
 - `prepare-netlify-build.js`: Prepares the environment for Netlify builds
-- `netlify.js`: Helper script for Netlify builds
+- `netlify-bootstrap.js`: Main bootstrap script for Netlify builds
 - `netlify.toml`: Netlify configuration file
 
 ## Required Node Version

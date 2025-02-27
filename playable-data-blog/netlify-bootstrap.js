@@ -11,12 +11,19 @@ const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
 
-// Configuration
-const REPO_DIR = '/opt/build/repo';
-
+// Detect if we're in the correct subdirectory
+const currentDir = process.cwd();
 console.log('=== NETLIFY BOOTSTRAP ===');
-console.log('Current directory:', process.cwd());
+console.log('Current directory:', currentDir);
+
+// This is the directory where Netlify expects the package.json file
+const REPO_DIR = '/opt/build/repo';
 console.log('Repository directory:', REPO_DIR);
+
+// Determine if we're in a subdirectory or not
+const isInSubdir = currentDir.includes('playable-data-blog') || 
+                  fs.existsSync(path.join(currentDir, 'package.json'));
+console.log('Is in correct subdirectory:', isInSubdir);
 
 // Create package.json in the repository directory
 const packageJson = {
@@ -49,21 +56,47 @@ const packageJson = {
   }
 };
 
-// Create the package.json file
+// Create or verify package.json at the correct location
 try {
-  fs.writeFileSync(path.join(REPO_DIR, 'package.json'), JSON.stringify(packageJson, null, 2));
-  console.log('Created package.json file');
-} catch (error) {
-  console.error('Failed to create package.json:', error.message);
-  process.exit(1);
-}
-
-// List the directory to confirm file creation
-try {
+  if (!fs.existsSync(path.join(REPO_DIR, 'package.json'))) {
+    fs.writeFileSync(path.join(REPO_DIR, 'package.json'), JSON.stringify(packageJson, null, 2));
+    console.log('Created package.json file in REPO_DIR');
+  } else {
+    console.log('package.json already exists in REPO_DIR');
+  }
+  
+  // List directory contents to verify
   console.log('Repository directory contents:');
   console.log(fs.readdirSync(REPO_DIR).join('\n'));
 } catch (error) {
-  console.error('Error listing repository directory:', error.message);
+  console.error('Error with package.json setup:', error.message);
+}
+
+// Copy source files to the build directory if needed
+try {
+  // Check if we need to copy src/ directory
+  if (fs.existsSync('src') && !fs.existsSync(path.join(REPO_DIR, 'src'))) {
+    console.log('Copying src directory to build location...');
+    fs.mkdirSync(path.join(REPO_DIR, 'src'), { recursive: true });
+    execSync(`cp -r src/* ${path.join(REPO_DIR, 'src')}/`, { stdio: 'inherit' });
+  }
+  
+  // Check if we need to copy public/ directory
+  if (fs.existsSync('public') && !fs.existsSync(path.join(REPO_DIR, 'public'))) {
+    console.log('Copying public directory to build location...');
+    fs.mkdirSync(path.join(REPO_DIR, 'public'), { recursive: true });
+    execSync(`cp -r public/* ${path.join(REPO_DIR, 'public')}/`, { stdio: 'inherit' });
+  }
+  
+  // Copy config files
+  ['astro.config.mjs', 'tsconfig.json', 'tailwind.config.mjs'].forEach(file => {
+    if (fs.existsSync(file) && !fs.existsSync(path.join(REPO_DIR, file))) {
+      console.log(`Copying ${file} to build location...`);
+      fs.copyFileSync(file, path.join(REPO_DIR, file));
+    }
+  });
+} catch (error) {
+  console.error('Error copying project files:', error.message);
 }
 
 // Install dependencies

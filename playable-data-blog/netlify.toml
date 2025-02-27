@@ -1,7 +1,7 @@
 [build]
   command = "node netlify-bootstrap.js"
   publish = "dist"
-  base = "."
+  base = "playable-data-blog"
 
 [build.environment]
   NODE_VERSION = "18"
