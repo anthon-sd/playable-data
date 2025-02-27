@@ -4,11 +4,18 @@
   base = "playable-data-blog"
 
 [build.environment]
+  # Node.js configuration
   NODE_VERSION = "18"
   NPM_FLAGS = "--legacy-peer-deps"
+  
   # Explicitly disable Ruby
   RUBY_VERSION = "0"
   NETLIFY_USE_RUBY = "false"
+  
+  # Python configuration
+  PYTHON_VERSION = "3.8"
+  PIP_DISABLE_PIP_VERSION_CHECK = "1"
+  
   # Force Netlify to detect this as a Node.js project
   NETLIFY_EXPERIMENTAL_BUILD_NODEJS_ONLY = "true"
 

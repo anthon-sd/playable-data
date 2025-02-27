@@ -16,6 +16,15 @@ const currentDir = process.cwd();
 console.log('=== NETLIFY BOOTSTRAP ===');
 console.log('Current directory:', currentDir);
 
+// Log environment details
+console.log('Node version:', process.version);
+try {
+  const pythonVersion = execSync('python --version').toString().trim();
+  console.log('Python version:', pythonVersion);
+} catch (error) {
+  console.log('Python not available or error checking version');
+}
+
 // This is the directory where Netlify expects the package.json file
 const REPO_DIR = '/opt/build/repo';
 console.log('Repository directory:', REPO_DIR);
@@ -55,6 +64,31 @@ const packageJson = {
     "node": ">=18.0.0"
   }
 };
+
+// Create version files to ensure correct environment detection
+try {
+  // Create .nvmrc
+  fs.writeFileSync(path.join(REPO_DIR, '.nvmrc'), '18');
+  console.log('Created .nvmrc file');
+  
+  // Create .node-version 
+  fs.writeFileSync(path.join(REPO_DIR, '.node-version'), '18.18.0');
+  console.log('Created .node-version file');
+  
+  // Create .ruby-version
+  fs.writeFileSync(path.join(REPO_DIR, '.ruby-version'), '0.0.0');
+  console.log('Created .ruby-version file');
+  
+  // Create .python-version
+  fs.writeFileSync(path.join(REPO_DIR, '.python-version'), '3.8.0');
+  console.log('Created .python-version file');
+  
+  // Create empty requirements.txt to indicate no Python dependencies
+  fs.writeFileSync(path.join(REPO_DIR, 'requirements.txt'), '# No Python dependencies');
+  console.log('Created empty requirements.txt file');
+} catch (error) {
+  console.error('Error creating version files:', error.message);
+}
 
 // Create or verify package.json at the correct location
 try {
@@ -99,10 +133,23 @@ try {
   console.error('Error copying project files:', error.message);
 }
 
-// Install dependencies
+// Install dependencies with explicit environment variables
 try {
   console.log('Installing dependencies...');
-  execSync('cd ' + REPO_DIR + ' && npm install --legacy-peer-deps', { stdio: 'inherit' });
+  // Set environment variables to ensure compatibility
+  const env = {
+    ...process.env,
+    NODE_VERSION: '18',
+    PYTHON_VERSION: '3.8',
+    NETLIFY_USE_YARN: 'false',
+    NETLIFY_USE_PNPM: 'false',
+    PATH: process.env.PATH
+  };
+  
+  execSync('cd ' + REPO_DIR + ' && npm install --legacy-peer-deps', { 
+    stdio: 'inherit',
+    env: env
+  });
   console.log('Dependencies installed successfully');
 } catch (error) {
   console.error('Error installing dependencies:', error.message);
