@@ -86,6 +86,23 @@ These changes ensure that npm warnings (like deprecated package notices) don't c
 
 If you're getting a specific package deprecation warning, you may want to update the dependency tree, but this approach allows the build to complete in the meantime.
 
+### ES Module vs CommonJS Error
+
+If you see an error like "ReferenceError: require is not defined in ES module scope", this indicates a conflict between ES modules and CommonJS in the build environment.
+
+#### Steps to Fix:
+
+We've addressed this by:
+1. Creating a CommonJS wrapper script (`netlify-bootstrap.cjs`) that dynamically creates and runs an ES module version
+2. Using the `.cjs` extension to force Node.js to treat it as CommonJS
+3. Ensuring all imports in the dynamically generated ES module use ES module syntax
+4. Updating the build command in `netlify.toml` to use the wrapper script
+
+This approach works because:
+- The wrapper script uses CommonJS syntax (`require()`) which is compatible with scripts run directly
+- It creates a temporary ES module script that uses proper ES module syntax (`import`)
+- The wrapper script executes the ES module script and handles any errors
+
 ## How Our Setup Works
 
 Our solution works by:

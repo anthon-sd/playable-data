@@ -1,5 +1,5 @@
 [build]
-  command = "npm run build --no-warnings"
+  command = "node netlify-bootstrap.cjs"
   publish = "dist"
   base = "playable-data-blog"
 
