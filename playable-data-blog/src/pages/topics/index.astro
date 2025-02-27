@@ -47,7 +47,7 @@ const sortedTags = Object.entries(tagCounts)
         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {sortedTags.map(({ tag, count }) => (
             <a 
-              href={`/topics/${tag}`} 
+              href={`/topics/${tag}/`} 
               class="flex justify-between items-center p-4 bg-tint-20 hover:bg-tint-50 rounded-lg transition"
             >
               <span class="text-dark-1 font-medium">#{tag}</span>

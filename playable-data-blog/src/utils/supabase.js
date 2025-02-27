@@ -1,173 +1,249 @@
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from '../db/supabase';
 
-// Create a single supabase client for interacting with your database
-const supabaseUrl = import.meta.env.PUBLIC_SUPABASE_URL || '';
-const supabaseAnonKey = import.meta.env.PUBLIC_SUPABASE_ANON_KEY || '';
-
-// Create the Supabase client with caching and performance options
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-  auth: {
-    persistSession: true,
-    autoRefreshToken: true,
-    detectSessionInUrl: true
+// Fallback data for static builds
+const FALLBACK_ARTICLES = [
+  {
+    id: '1',
+    title: 'Getting Started with Game Analytics',
+    slug: 'getting-started-with-game-analytics',
+    description: 'Learn the fundamentals of game analytics and how to implement tracking in your games.',
+    status: 'published',
+    author_name: 'Playable Data Team',
+    created_at: '2023-12-10T00:00:00.000Z',
+    updated_at: '2023-12-10T00:00:00.000Z',
+    cover_image: 'https://images.unsplash.com/photo-1511512578047-dfb367046420?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1200&q=80',
+    tags: ['analytics', 'game-development', 'data'],
+    content: '# Getting Started with Game Analytics\n\nGame analytics is essential for understanding player behavior and improving your games...'
   },
-  global: {
-    fetch: (...args) => fetch(...args)
+  {
+    id: '2',
+    title: 'Player Retention Strategies',
+    slug: 'player-retention-strategies',
+    description: 'Discover effective strategies to keep players engaged and coming back to your game.',
+    status: 'published',
+    author_name: 'Playable Data Team',
+    created_at: '2023-12-15T00:00:00.000Z',
+    updated_at: '2023-12-15T00:00:00.000Z',
+    cover_image: 'https://images.unsplash.com/photo-1493711662062-fa541adb3fc8?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1200&q=80',
+    tags: ['retention', 'game-design', 'monetization'],
+    featured: true,
+    content: '# Player Retention Strategies\n\nRetaining players is crucial for the long-term success of your game...'
   },
-  realtime: {
-    timeout: 30000 // Increase timeout for better reliability
+  {
+    id: '3',
+    title: 'Monetization Models for Indie Games',
+    slug: 'monetization-models-for-indie-games',
+    description: 'Explore different monetization approaches that work well for indie game developers.',
+    status: 'published',
+    author_name: 'Playable Data Team',
+    created_at: '2023-12-20T00:00:00.000Z',
+    updated_at: '2023-12-20T00:00:00.000Z',
+    cover_image: 'https://images.unsplash.com/photo-1607799279861-4dd421887fb3?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1200&q=80',
+    tags: ['monetization', 'indie', 'business'],
+    featured: true,
+    content: '# Monetization Models for Indie Games\n\nChoosing the right monetization model is critical for indie game success...'
   }
-});
-
-// Memoization cache for frequently used queries
-const memoCache = new Map();
-const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
-
-/**
- * Memoized function to reduce duplicate API calls
- * @param {Function} fn - The function to memoize
- * @param {string} key - Cache key
- * @param {Array} args - Function arguments
- * @returns {Promise<any>} - Function result
- */
-async function memoize(fn, key, ...args) {
-  const cacheKey = `${key}:${JSON.stringify(args)}`;
-  const cached = memoCache.get(cacheKey);
-  
-  if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
-    return cached.data;
-  }
-  
-  const result = await fn(...args);
-  memoCache.set(cacheKey, { data: result, timestamp: Date.now() });
-  return result;
-}
+];
 
 export async function signIn(email, password) {
-  const { data, error } = await supabase.auth.signInWithPassword({
-    email,
-    password,
-  });
-  
-  return { data, error };
+  try {
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+    
+    return { data, error };
+  } catch (error) {
+    console.error('Error signing in:', error);
+    return { data: null, error };
+  }
 }
 
 export async function signOut() {
-  const { error } = await supabase.auth.signOut();
-  return { error };
+  try {
+    const { error } = await supabase.auth.signOut();
+    return { error };
+  } catch (error) {
+    console.error('Error signing out:', error);
+    return { error };
+  }
 }
 
 export async function getCurrentUser() {
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session) return null;
-  
-  const { data: { user } } = await supabase.auth.getUser();
-  return user;
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return null;
+    
+    const { data: { user } } = await supabase.auth.getUser();
+    return user;
+  } catch (error) {
+    console.error('Error getting current user:', error);
+    return null;
+  }
 }
 
 export async function getUserRole(userId) {
-  return memoize(async (id) => {
+  try {
     const { data, error } = await supabase
       .from('user_roles')
       .select('role')
-      .eq('user_id', id)
+      .eq('user_id', userId)
       .single();
       
     if (error) return null;
     return data?.role;
-  }, 'getUserRole', userId);
+  } catch (error) {
+    console.error('Error getting user role:', error);
+    return null;
+  }
 }
 
 export async function getArticles() {
-  return memoize(async () => {
+  // For static builds, always return fallback data
+  if (import.meta.env.SSR && !import.meta.env.DEV) {
+    return FALLBACK_ARTICLES;
+  }
+  
+  try {
     const { data, error } = await supabase
       .from('articles')
       .select('*')
       .order('created_at', { ascending: false });
       
-    if (error) throw error;
+    if (error) {
+      console.error('Error fetching articles:', error);
+      return FALLBACK_ARTICLES;
+    }
+    
     return data || [];
-  }, 'getArticles');
+  } catch (error) {
+    console.error('Error fetching articles:', error);
+    return FALLBACK_ARTICLES;
+  }
 }
 
 export async function getArticleById(id) {
-  return memoize(async (articleId) => {
-    try {
-      const { data, error } = await supabase
+  // For static builds, return fallback data
+  if (import.meta.env.SSR && !import.meta.env.DEV) {
+    const article = FALLBACK_ARTICLES.find(a => a.id === id || a.slug === id);
+    if (article) return article;
+    
+    if (id === 'placeholder') {
+      return {
+        slug: 'placeholder',
+        title: 'Welcome to Playable Data Blog',
+        description: 'This is a placeholder article while we set up our content.',
+        content: '# Welcome to Playable Data Blog\n\nWe\'re currently setting up our content. Please check back soon for articles on gaming analytics, data science, and more!',
+        created_at: new Date().toISOString(),
+        tags: ['welcome']
+      };
+    }
+    
+    // Return the first fallback article if no match
+    return FALLBACK_ARTICLES[0];
+  }
+  
+  try {
+    // Try by ID first
+    const { data, error } = await supabase
+      .from('articles')
+      .select('*')
+      .eq('id', id)
+      .single();
+      
+    if (error) {
+      // Try by slug if ID fails
+      const { data: dataBySlug, error: errorBySlug } = await supabase
         .from('articles')
         .select('*')
-        .eq('id', articleId)
+        .eq('slug', id)
         .single();
         
-      if (error) {
-        // Try by slug if ID fails
-        const { data: dataBySlug, error: errorBySlug } = await supabase
-          .from('articles')
-          .select('*')
-          .eq('slug', articleId)
-          .single();
-          
-        if (errorBySlug) throw error;
-        return dataBySlug;
+      if (errorBySlug) {
+        // Return placeholder for 'placeholder' slug
+        if (id === 'placeholder') {
+          return {
+            slug: 'placeholder',
+            title: 'Welcome to Playable Data Blog',
+            description: 'This is a placeholder article while we set up our content.',
+            content: '# Welcome to Playable Data Blog\n\nWe\'re currently setting up our content. Please check back soon for articles on gaming analytics, data science, and more!',
+            created_at: new Date().toISOString(),
+            tags: ['welcome']
+          };
+        }
+        
+        // Try to find in fallback data
+        const fallbackArticle = FALLBACK_ARTICLES.find(a => a.id === id || a.slug === id);
+        if (fallbackArticle) return fallbackArticle;
+        
+        throw errorBySlug;
       }
-      
-      return data;
-    } catch (error) {
-      console.error(`Error getting article by ID/slug ${articleId}:`, error);
-      throw error;
+      return dataBySlug;
     }
-  }, 'getArticleById', id);
+    
+    return data;
+  } catch (error) {
+    console.error(`Error getting article by ID/slug ${id}:`, error);
+    
+    // Return placeholder for 'placeholder' slug
+    if (id === 'placeholder') {
+      return {
+        slug: 'placeholder',
+        title: 'Welcome to Playable Data Blog',
+        description: 'This is a placeholder article while we set up our content.',
+        content: '# Welcome to Playable Data Blog\n\nWe\'re currently setting up our content. Please check back soon for articles on gaming analytics, data science, and more!',
+        created_at: new Date().toISOString(),
+        tags: ['welcome']
+      };
+    }
+    
+    // Return the first fallback article if no match
+    return FALLBACK_ARTICLES[0];
+  }
 }
 
 export async function createArticle(article) {
-  const { data, error } = await supabase
-    .from('articles')
-    .insert([article])
-    .select();
-    
-  if (error) throw error;
-  
-  // Clear cache after mutation
-  memoCache.clear();
-  
-  return data[0];
+  try {
+    const { data, error } = await supabase
+      .from('articles')
+      .insert([article])
+      .select();
+      
+    if (error) throw error;
+    return data[0];
+  } catch (error) {
+    console.error('Error creating article:', error);
+    throw error;
+  }
 }
 
 export async function updateArticle(id, updates) {
-  const { data, error } = await supabase
-    .from('articles')
-    .update(updates)
-    .eq('id', id)
-    .select();
-    
-  if (error) throw error;
-  
-  // Clear cache after mutation
-  memoCache.clear();
-  
-  return data[0];
+  try {
+    const { data, error } = await supabase
+      .from('articles')
+      .update(updates)
+      .eq('id', id)
+      .select();
+      
+    if (error) throw error;
+    return data[0];
+  } catch (error) {
+    console.error('Error updating article:', error);
+    throw error;
+  }
 }
 
 export async function deleteArticle(id) {
-  const { error } = await supabase
-    .from('articles')
-    .delete()
-    .eq('id', id);
-    
-  if (error) throw error;
-  
-  // Clear cache after mutation
-  memoCache.clear();
-  
-  return true;
-}
-
-// Clear cache periodically to prevent stale data
-setInterval(() => {
-  const now = Date.now();
-  for (const [key, value] of memoCache.entries()) {
-    if (now - value.timestamp > CACHE_TTL) {
-      memoCache.delete(key);
-    }
+  try {
+    const { error } = await supabase
+      .from('articles')
+      .delete()
+      .eq('id', id);
+      
+    if (error) throw error;
+    return true;
+  } catch (error) {
+    console.error('Error deleting article:', error);
+    throw error;
   }
-}, CACHE_TTL);
+}

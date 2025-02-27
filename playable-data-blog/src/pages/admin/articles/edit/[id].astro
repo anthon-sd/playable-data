@@ -1,11 +1,20 @@
 ---
 import AdminLayout from '../../../../layouts/AdminLayout.astro';
-import { getArticleById, updateArticle } from '../../../../utils/supabase';
+import { getArticleById, updateArticle, getArticles } from '../../../../utils/supabase';
 import { marked } from 'marked';
 import RichTextEditor from '../../../../components/RichTextEditor.astro';
 import MediaLibrary from '../../../../components/MediaLibrary.astro';
 
-export const prerender = true;
+// Required for dynamic routes in Astro
+export async function getStaticPaths() {
+  // Fetch all articles to generate paths
+  const articles = await getArticles();
+  
+  // Create a path for each article
+  return articles.map(article => ({
+    params: { id: article.id.toString() },
+  }));
+}
 
 // Get article ID from URL
 const { id } = Astro.params;
@@ -47,7 +56,7 @@ if (Astro.request.method === 'POST') {
     };
     
     // Update article
-    const response = await fetch(`/api/articles/${id}`, {
+    const response = await fetch(`/api/articles/${id}/`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json'
@@ -62,7 +71,7 @@ if (Astro.request.method === 'POST') {
       // Sync to content file if published
       if (status === 'published') {
         try {
-          const syncResponse = await fetch(`/api/content/export/${article.slug}`, {
+          const syncResponse = await fetch(`/api/content/export/${article.slug}/`, {
             method: 'POST'
           });
           
@@ -87,9 +96,9 @@ if (Astro.request.method === 'POST') {
 const htmlContent = article?.content ? marked.parse(article.content) : '';
 ---
 
-<AdminLayout title="Edit Article" prerender={true}>
+<AdminLayout title="Edit Article">
   <div class="mb-6">
-    <a href="/admin/articles" class="text-blue-500 hover:text-blue-600 flex items-center">
+    <a href="/admin/articles/" class="text-blue-500 hover:text-blue-600 flex items-center">
       <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
       </svg>
@@ -167,7 +176,7 @@ const htmlContent = article?.content ? marked.parse(article.content) : '';
           </div>
           
           <div class="flex justify-between space-x-3">
-            <a href={`/blog/${article.slug}`} target="_blank" class="btn btn-secondary">
+            <a href={`/blog/${article.slug}/`} target="_blank" class="btn btn-secondary">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
@@ -227,13 +236,13 @@ const htmlContent = article?.content ? marked.parse(article.content) : '';
       if (confirmDelete) {
         confirmDelete.addEventListener('click', async () => {
           try {
-            const articleId = window.location.pathname.split('/').pop();
-            const response = await fetch(`/api/articles/${articleId}`, {
+            const articleId = window.location.pathname.split('/').pop().replace('/', '');
+            const response = await fetch(`/api/articles/${articleId}/`, {
               method: 'DELETE'
             });
             
             if (response.ok) {
-              window.location.href = '/admin/articles';
+              window.location.href = '/admin/articles/';
             } else {
               const data = await response.json();
               alert(data.message || 'Failed to delete article');

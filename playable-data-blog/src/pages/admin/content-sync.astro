@@ -3,8 +3,6 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
 import { getArticles } from '../../utils/supabase';
 import { listContent } from '../../utils/storage';
 
-export const prerender = true;
-
 // Get content from both sources
 let contentFiles = [];
 let dbArticles = [];
@@ -68,7 +66,7 @@ if (storageItems && storageItems.length > 0) {
 const contentItems = Object.values(contentMapping);
 ---
 
-<AdminLayout title="Content Synchronization" prerender={true}>
+<AdminLayout title="Content Synchronization">
   <div class="flex justify-between items-center mb-6">
     <h2 class="text-xl font-bold">Content Synchronization</h2>
     <div class="flex space-x-2">
@@ -186,7 +184,7 @@ const contentItems = Object.values(contentMapping);
                       Migrate to Storage
                     </button>
                     <a 
-                      href={`/blog/${item.slug}`} 
+                      href={`/blog/${item.slug}/`} 
                       target="_blank" 
                       class="text-gray-500 hover:text-gray-700"
                     >
@@ -292,7 +290,7 @@ const contentItems = Object.values(contentMapping);
             }
             
             // Call API to migrate content
-            const response = await fetch(`/api/storage/migrate/${slug}`, {
+            const response = await fetch(`/api/storage/migrate/${slug}/`, {
               method: 'POST'
             });
             
@@ -363,7 +361,7 @@ const contentItems = Object.values(contentMapping);
             }
             
             // Call API to migrate all content
-            const response = await fetch('/api/storage/migrate-all', {
+            const response = await fetch('/api/storage/migrate-all/', {
               method: 'POST'
             });
             

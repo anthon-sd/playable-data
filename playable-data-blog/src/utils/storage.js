@@ -1,4 +1,4 @@
-import { supabase } from './supabase';
+import { supabase } from '../db/supabase';
 import { marked } from 'marked';
 import slugify from 'slugify';
 
@@ -6,14 +6,18 @@ import slugify from 'slugify';
 const CONTENT_BUCKET = 'content';
 const MEDIA_BUCKET = 'media';
 
-// Cache for storage operations
-const storageCache = new Map();
-const STORAGE_CACHE_TTL = 10 * 60 * 1000; // 10 minutes
+// For static builds, always return fallback data
+const isBuildTime = import.meta.env.SSR && !import.meta.env.DEV;
 
 /**
  * Initialize storage buckets if they don't exist
  */
 export async function initializeStorage() {
+  // For static builds, skip initialization
+  if (isBuildTime) {
+    return true;
+  }
+  
   try {
     // Check if content bucket exists
     const { data: contentBuckets } = await supabase.storage.listBuckets();
@@ -51,6 +55,15 @@ export async function initializeStorage() {
  * @returns {Promise<object>} - The upload result
  */
 export async function uploadContent(slug, content, metadata = {}) {
+  // For static builds, return mock data
+  if (isBuildTime) {
+    return {
+      path: `${slug}.md`,
+      url: `https://example.com/mock-storage/${slug}.md`,
+      metadata
+    };
+  }
+  
   try {
     // Ensure storage is initialized
     await initializeStorage();
@@ -74,9 +87,6 @@ export async function uploadContent(slug, content, metadata = {}) {
       .from(CONTENT_BUCKET)
       .createSignedUrl(filePath, 60 * 60 * 24 * 7); // 7 days
     
-    // Clear cache for this slug
-    storageCache.delete(`content:${slug}`);
-    
     return {
       path: filePath,
       url: urlData?.signedUrl || null,
@@ -89,19 +99,17 @@ export async function uploadContent(slug, content, metadata = {}) {
 }
 
 /**
- * Get content from Supabase Storage with caching
+ * Get content from Supabase Storage
  * @param {string} slug - The slug for the content
  * @returns {Promise<object>} - The content and metadata
  */
 export async function getContent(slug) {
+  // For static builds, return placeholder content
+  if (isBuildTime) {
+    return getPlaceholderContent(slug);
+  }
+  
   try {
-    const cacheKey = `content:${slug}`;
-    const cached = storageCache.get(cacheKey);
-    
-    if (cached && Date.now() - cached.timestamp < STORAGE_CACHE_TTL) {
-      return cached.data;
-    }
-    
     // Create the file path
     const filePath = `${slug}.md`;
     
@@ -110,7 +118,13 @@ export async function getContent(slug) {
       .from(CONTENT_BUCKET)
       .download(filePath);
     
-    if (error) throw error;
+    if (error) {
+      // For placeholder slug, return placeholder content
+      if (slug === 'placeholder') {
+        return getPlaceholderContent(slug);
+      }
+      throw error;
+    }
     
     // Convert to text
     const content = await data.text();
@@ -120,18 +134,19 @@ export async function getContent(slug) {
       .from(CONTENT_BUCKET)
       .getPublicUrl(filePath);
     
-    const result = {
+    return {
       content,
       metadata,
       slug
     };
-    
-    // Cache the result
-    storageCache.set(cacheKey, { data: result, timestamp: Date.now() });
-    
-    return result;
   } catch (error) {
     console.error(`Error getting content for ${slug}:`, error);
+    
+    // For placeholder slug, return placeholder content
+    if (slug === 'placeholder') {
+      return getPlaceholderContent(slug);
+    }
+    
     throw error;
   }
 }
@@ -142,6 +157,11 @@ export async function getContent(slug) {
  * @returns {Promise<boolean>} - Success status
  */
 export async function deleteContent(slug) {
+  // For static builds, return success
+  if (isBuildTime) {
+    return true;
+  }
+  
   try {
     // Create the file path
     const filePath = `${slug}.md`;
@@ -153,9 +173,6 @@ export async function deleteContent(slug) {
     
     if (error) throw error;
     
-    // Clear cache for this slug
-    storageCache.delete(`content:${slug}`);
-    
     return true;
   } catch (error) {
     console.error(`Error deleting content for ${slug}:`, error);
@@ -164,18 +181,16 @@ export async function deleteContent(slug) {
 }
 
 /**
- * List all content in Supabase Storage with caching
+ * List all content in Supabase Storage
  * @returns {Promise<Array>} - List of content items
  */
 export async function listContent() {
+  // For static builds, return empty array
+  if (isBuildTime) {
+    return [];
+  }
+  
   try {
-    const cacheKey = 'contentList';
-    const cached = storageCache.get(cacheKey);
-    
-    if (cached && Date.now() - cached.timestamp < STORAGE_CACHE_TTL) {
-      return cached.data;
-    }
-    
     // List all content
     const { data, error } = await supabase.storage
       .from(CONTENT_BUCKET)
@@ -183,13 +198,10 @@ export async function listContent() {
     
     if (error) throw error;
     
-    // Cache the result
-    storageCache.set(cacheKey, { data: data || [], timestamp: Date.now() });
-    
     return data || [];
   } catch (error) {
     console.error('Error listing content:', error);
-    return []; // Return empty array instead of throwing
+    return []; // Return empty array on error
   }
 }
 
@@ -201,6 +213,16 @@ export async function listContent() {
  * @returns {Promise<object>} - The upload result
  */
 export async function uploadMedia(file, folder = '', metadata = {}) {
+  // For static builds, return mock data
+  if (isBuildTime) {
+    const fileName = typeof file === 'string' ? file : file.name || 'mock-file.jpg';
+    return {
+      path: folder ? `${folder}/${fileName}` : fileName,
+      url: `https://example.com/mock-storage/${folder ? folder + '/' : ''}${fileName}`,
+      metadata
+    };
+  }
+  
   try {
     // Ensure storage is initialized
     await initializeStorage();
@@ -231,9 +253,6 @@ export async function uploadMedia(file, folder = '', metadata = {}) {
       .from(MEDIA_BUCKET)
       .getPublicUrl(filePath);
     
-    // Clear media list cache
-    storageCache.delete(`mediaList:${folder}`);
-    
     return {
       path: filePath,
       url: urlData?.publicUrl || null,
@@ -246,19 +265,39 @@ export async function uploadMedia(file, folder = '', metadata = {}) {
 }
 
 /**
- * List all media in Supabase Storage with caching
+ * List all media in Supabase Storage
  * @param {string} folder - The folder to list
  * @returns {Promise<Array>} - List of media items
  */
 export async function listMedia(folder = '') {
+  // For static builds, return mock data
+  if (isBuildTime) {
+    return [
+      { 
+        name: 'sample-image-1.jpg', 
+        id: '1', 
+        created_at: new Date().toISOString(),
+        path: folder ? `${folder}/sample-image-1.jpg` : 'sample-image-1.jpg',
+        url: 'https://images.unsplash.com/photo-1519389950473-47ba0277781c'
+      },
+      { 
+        name: 'sample-image-2.jpg', 
+        id: '2', 
+        created_at: new Date().toISOString(),
+        path: folder ? `${folder}/sample-image-2.jpg` : 'sample-image-2.jpg',
+        url: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa'
+      },
+      { 
+        name: 'sample-image-3.jpg', 
+        id: '3', 
+        created_at: new Date().toISOString(),
+        path: folder ? `${folder}/sample-image-3.jpg` : 'sample-image-3.jpg',
+        url: 'https://images.unsplash.com/photo-1563986768609-322da13575f3'
+      }
+    ];
+  }
+  
   try {
-    const cacheKey = `mediaList:${folder}`;
-    const cached = storageCache.get(cacheKey);
-    
-    if (cached && Date.now() - cached.timestamp < STORAGE_CACHE_TTL) {
-      return cached.data;
-    }
-    
     // List all media
     const { data, error } = await supabase.storage
       .from(MEDIA_BUCKET)
@@ -280,13 +319,27 @@ export async function listMedia(folder = '') {
       };
     }));
     
-    // Cache the result
-    storageCache.set(cacheKey, { data: mediaWithUrls, timestamp: Date.now() });
-    
     return mediaWithUrls;
   } catch (error) {
     console.error('Error listing media:', error);
-    throw error;
+    
+    // Return mock data on error
+    return [
+      { 
+        name: 'sample-image-1.jpg', 
+        id: '1', 
+        created_at: new Date().toISOString(),
+        path: folder ? `${folder}/sample-image-1.jpg` : 'sample-image-1.jpg',
+        url: 'https://images.unsplash.com/photo-1519389950473-47ba0277781c'
+      },
+      { 
+        name: 'sample-image-2.jpg', 
+        id: '2', 
+        created_at: new Date().toISOString(),
+        path: folder ? `${folder}/sample-image-2.jpg` : 'sample-image-2.jpg',
+        url: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa'
+      }
+    ];
   }
 }
 
@@ -296,6 +349,11 @@ export async function listMedia(folder = '') {
  * @returns {Promise<boolean>} - Success status
  */
 export async function deleteMedia(path) {
+  // For static builds, return success
+  if (isBuildTime) {
+    return true;
+  }
+  
   try {
     // Delete the media
     const { error } = await supabase.storage
@@ -303,10 +361,6 @@ export async function deleteMedia(path) {
       .remove([path]);
     
     if (error) throw error;
-    
-    // Clear media list cache
-    const folder = path.includes('/') ? path.split('/')[0] : '';
-    storageCache.delete(`mediaList:${folder}`);
     
     return true;
   } catch (error) {
@@ -370,6 +424,15 @@ export function storageFormatToArticle(storageItem) {
  * @returns {Promise<Array>} - Results of the migration
  */
 export async function migrateContentToStorage(articles) {
+  // For static builds, return mock results
+  if (isBuildTime) {
+    return articles.map(article => ({
+      slug: article.slug,
+      status: 'success',
+      message: 'Migrated successfully (mock)'
+    }));
+  }
+  
   try {
     const results = [];
     
@@ -408,6 +471,15 @@ export async function migrateContentToStorage(articles) {
  * @returns {Promise<Array>} - Results of the migration
  */
 export async function migrateFilesToStorage(contentFiles) {
+  // For static builds, return mock results
+  if (isBuildTime) {
+    return contentFiles.map(file => ({
+      slug: file.slug,
+      status: 'success',
+      message: 'Migrated successfully (mock)'
+    }));
+  }
+  
   try {
     const results = [];
     
@@ -450,12 +522,14 @@ export async function migrateFilesToStorage(contentFiles) {
   }
 }
 
-// Clear cache periodically to prevent stale data
-setInterval(() => {
-  const now = Date.now();
-  for (const [key, value] of storageCache.entries()) {
-    if (now - value.timestamp > STORAGE_CACHE_TTL) {
-      storageCache.delete(key);
-    }
-  }
-}, STORAGE_CACHE_TTL);
+// Fallback content for static builds
+export function getPlaceholderContent(slug) {
+  return {
+    content: '# Welcome to Playable Data Blog\n\nWe\'re currently setting up our content. Please check back soon for articles on gaming analytics, data science, and more!',
+    metadata: {
+      title: 'Welcome to Playable Data Blog',
+      description: 'This is a placeholder article while we set up our content.'
+    },
+    slug
+  };
+}

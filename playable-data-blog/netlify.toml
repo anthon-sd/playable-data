@@ -4,12 +4,9 @@
 
 [build.environment]
   NODE_VERSION = "18"
-  NODE_OPTIONS = "--max-old-space-size=4096"
 
+# This ensures that all routes are handled properly
 [[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
-
-[functions]
-  node_bundler = "esbuild"

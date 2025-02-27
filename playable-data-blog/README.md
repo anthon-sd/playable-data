@@ -56,7 +56,7 @@ The project is configured for deployment on Netlify:
 
 ## Content Management
 
-The admin dashboard is available at `/admin` and provides the following features:
+The admin dashboard is available at `/admin/` and provides the following features:
 
 - Create, edit, and delete blog posts
 - Upload and manage media files

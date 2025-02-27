@@ -3,8 +3,6 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
 import { getArticles } from '../../utils/supabase';
 import { listContent } from '../../utils/storage';
 
-export const prerender = true;
-
 // Get recent articles
 let recentArticles = [];
 let storageItems = [];
@@ -31,7 +29,7 @@ const draftArticles = recentArticles.filter(article => article.status === 'draft
 const storageCount = storageItems.length;
 ---
 
-<AdminLayout title="Dashboard" prerender={true}>
+<AdminLayout title="Dashboard">
   <!-- Stats cards -->
   <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
     <div class="card p-6">
@@ -107,7 +105,7 @@ const storageCount = storageItems.length;
               : 'No content in storage yet. Use the Content Sync tool to migrate your content.'}
           </p>
         </div>
-        <a href="/admin/content-sync" class="btn btn-primary">
+        <a href="/admin/content-sync/" class="btn btn-primary">
           <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
           </svg>
@@ -147,12 +145,12 @@ const storageCount = storageItems.length;
                 <td>{new Date(article.created_at).toLocaleDateString()}</td>
                 <td>
                   <div class="flex space-x-2">
-                    <a href={`/admin/articles/edit/${article.id}`} class="text-blue-500 hover:text-blue-600">
+                    <a href={`/admin/articles/edit/${article.id}/`} class="text-blue-500 hover:text-blue-600">
                       <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                       </svg>
                     </a>
-                    <a href={`/blog/${article.slug}`} target="_blank" class="text-gray-500 hover:text-gray-700">
+                    <a href={`/blog/${article.slug}/`} target="_blank" class="text-gray-500 hover:text-gray-700">
                       <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
@@ -171,7 +169,7 @@ const storageCount = storageItems.length;
       </table>
     </div>
     <div class="card-footer">
-      <a href="/admin/articles" class="text-blue-500 hover:text-blue-600 font-medium">View all articles</a>
+      <a href="/admin/articles/" class="text-blue-500 hover:text-blue-600 font-medium">View all articles</a>
     </div>
   </div>
   
@@ -182,13 +180,13 @@ const storageCount = storageItems.length;
     </div>
     <div class="card-body">
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <a href="/admin/articles/new" class="btn btn-primary">
+        <a href="/admin/articles/new/" class="btn btn-primary">
           <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
           </svg>
           Create New Article
         </a>
-        <a href="/admin/media/upload" class="btn btn-secondary">
+        <a href="/admin/media/upload/" class="btn btn-secondary">
           <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
           </svg>

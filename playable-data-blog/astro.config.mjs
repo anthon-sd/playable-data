@@ -9,27 +9,40 @@ export default defineConfig({
     tailwind(),
     mdx()
   ],
-  site: 'https://playable-data-blog.netlify.app',
+  site: 'https://playabledata.io',
   output: 'static',
+  trailingSlash: 'always',
+  build: {
+    format: 'directory'
+  },
   vite: {
     build: {
       sourcemap: false,
-      // Increase the build timeout to prevent termination
-      assetsInlineLimit: 4096,
-      chunkSizeWarningLimit: 1024,
+      // Optimize build for production
+      minify: 'terser',
+      terserOptions: {
+        compress: {
+          drop_console: false, // Keep console logs for debugging
+          drop_debugger: true
+        }
+      },
       rollupOptions: {
         output: {
-          manualChunks(id) {
-            // Create separate chunks for large dependencies
-            if (id.includes('node_modules')) {
-              return 'vendor';
-            }
+          manualChunks: {
+            vendor: [
+              '@supabase/supabase-js',
+              'marked',
+              'slugify'
+            ]
           }
         }
       }
     },
     optimizeDeps: {
       exclude: ['fsevents']
+    },
+    ssr: {
+      noExternal: ['@supabase/supabase-js']
     }
   }
 });

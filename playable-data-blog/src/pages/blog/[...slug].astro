@@ -23,11 +23,11 @@ export async function getStaticPaths() {
         props: { 
           article: {
             slug: 'placeholder',
-            title: 'Placeholder Article',
-            description: 'This is a placeholder article',
-            content: '# Placeholder\n\nThis is a placeholder article.',
+            title: 'Welcome to Playable Data Blog',
+            description: 'This is a placeholder article while we set up our content.',
+            content: '# Welcome to Playable Data Blog\n\nWe\'re currently setting up our content. Please check back soon for articles on gaming analytics, data science, and more!',
             created_at: new Date().toISOString(),
-            tags: ['placeholder']
+            tags: ['welcome']
           } 
         }
       }
@@ -42,14 +42,17 @@ let { article: initialArticle } = Astro.props;
 let article = initialArticle;
 let content = article?.content || '';
 
-try {
-  // Try to get from storage
-  const storageContent = await getContent(slug);
-  if (storageContent) {
-    content = storageContent.content;
+// Only try to get content from storage if not using the placeholder and not in SSR
+if (slug !== 'placeholder' && !import.meta.env.SSR) {
+  try {
+    // Try to get from storage
+    const storageContent = await getContent(slug);
+    if (storageContent) {
+      content = storageContent.content;
+    }
+  } catch (error) {
+    console.log('Content not found in storage, using database content');
   }
-} catch (error) {
-  console.log('Content not found in storage, using database content');
 }
 
 // Parse markdown content

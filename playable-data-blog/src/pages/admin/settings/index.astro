@@ -1,8 +1,6 @@
 ---
 import AdminLayout from '../../../layouts/AdminLayout.astro';
 
-export const prerender = true;
-
 // Handle form submission
 let successMessage = '';
 let errorMessage = '';
@@ -22,7 +20,7 @@ const siteSettings = {
   general: {
     siteName: 'Playable Data Blog',
     siteDescription: 'Expert technology insights and analysis to help professionals navigate the digital landscape.',
-    siteUrl: 'https://your-domain.com',
+    siteUrl: 'https://playabledata.io',
     language: 'en'
   },
   seo: {
@@ -45,7 +43,7 @@ const siteSettings = {
 };
 ---
 
-<AdminLayout title="Settings" prerender={true}>
+<AdminLayout title="Settings">
   <div class="flex justify-between items-center mb-6">
     <h2 class="text-xl font-bold">Site Settings</h2>
   </div>
