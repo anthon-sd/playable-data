@@ -147,10 +147,12 @@ try {
     PYTHON_VERSION: '3.8',
     NETLIFY_USE_YARN: 'false',
     NETLIFY_USE_PNPM: 'false',
+    CI: 'false', // Prevent warnings from being treated as errors
+    npm_config_loglevel: 'error', // Only show errors, not warnings
     PATH: process.env.PATH
   };
   
-  execSync('cd ' + REPO_DIR + ' && npm install --legacy-peer-deps', { 
+  execSync('cd ' + REPO_DIR + ' && npm install --legacy-peer-deps --no-warnings', { 
     stdio: 'inherit',
     env: env
   });
@@ -163,7 +165,7 @@ try {
 // Run the build
 try {
   console.log('Running build...');
-  execSync('cd ' + REPO_DIR + ' && npm run build', { stdio: 'inherit' });
+  execSync('cd ' + REPO_DIR + ' && npm run build --no-warnings', { stdio: 'inherit' });
   console.log('Build completed successfully');
 } catch (error) {
   console.error('Build failed:', error.message);

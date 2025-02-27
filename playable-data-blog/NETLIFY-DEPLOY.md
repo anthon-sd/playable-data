@@ -70,6 +70,22 @@ This has been addressed by:
 
 Netlify's version manager (mise) expects Python versions in a specific format. Using just the version number without prefixes works best.
 
+### NPM Warnings Breaking Builds
+
+If you see errors related to npm warnings like "npm warn deprecated [package]" causing your build to fail, this is because Netlify's build environment is treating warnings as errors.
+
+#### Steps to Fix:
+
+We've addressed this by:
+1. Setting `CI = "false"` in the netlify.toml environment variables
+2. Adding `--no-warnings` flag to npm commands in the build process
+3. Setting `npm_config_loglevel = "error"` to only show errors, not warnings
+4. Modifying the bootstrap script to use these same flags for all npm operations
+
+These changes ensure that npm warnings (like deprecated package notices) don't cause the build to fail.
+
+If you're getting a specific package deprecation warning, you may want to update the dependency tree, but this approach allows the build to complete in the meantime.
+
 ## How Our Setup Works
 
 Our solution works by:
