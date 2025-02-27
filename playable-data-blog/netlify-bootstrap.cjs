@@ -247,14 +247,14 @@ const createFallbackSite = () => {
   
   <div class="info">
     <h2>Diagnostic Information</h2>
-    <p><strong>Build timestamp:</strong> ${formattedDate}</p>
-    <p><strong>Node.js version:</strong> ${process.version}</p>
-    <p><strong>Expected output directory:</strong> ${EXPECTED_OUTPUT_DIR}</p>
-    <p><strong>Build directory:</strong> ${REPO_DIR}/dist</p>
+    <p><strong>Build timestamp:</strong> \${formattedDate}</p>
+    <p><strong>Node.js version:</strong> \${process.version}</p>
+    <p><strong>Expected output directory:</strong> \${EXPECTED_OUTPUT_DIR}</p>
+    <p><strong>Build directory:</strong> \${REPO_DIR}/dist</p>
   </div>
   
   <div class="footer">
-    <p>&copy; \${new Date().getFullYear()} Playable Data | Error page generated at ${timestamp}</p>
+    <p>&copy; \${new Date().getFullYear()} Playable Data | Error page generated at \${timestamp}</p>
   </div>
 </body>
 </html>\`;
@@ -311,7 +311,7 @@ const createFallbackSite = () => {
   </div>
   
   <div class="footer">
-    <p>&copy; \${new Date().getFullYear()} Playable Data | Error page generated at ${timestamp}</p>
+    <p>&copy; \${new Date().getFullYear()} Playable Data | Error page generated at \${timestamp}</p>
   </div>
 </body>
 </html>\`;
