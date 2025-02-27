@@ -12,12 +12,15 @@
   RUBY_VERSION = "0"
   NETLIFY_USE_RUBY = "false"
   
-  # Python configuration
-  PYTHON_VERSION = "3.8"
+  # Python configuration - specify exact version, avoid nodejs-style versioning
+  PYTHON_VERSION = "3.8.0" 
   PIP_DISABLE_PIP_VERSION_CHECK = "1"
   
   # Force Netlify to detect this as a Node.js project
   NETLIFY_EXPERIMENTAL_BUILD_NODEJS_ONLY = "true"
+  
+  # Disable mise's auto version resolution to prevent version confusion
+  MISE_PYTHON_DISABLE_AUTO = "true"
 
 # This ensures that all routes are handled properly
 [[redirects]]
