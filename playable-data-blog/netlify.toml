@@ -1,5 +1,5 @@
 [build]
-  command = "npm run build"
+  command = "node netlify-bootstrap.js"
   publish = "dist"
   base = "."
 
