@@ -27,16 +27,16 @@ If you see the error: `npm error enoent Could not read package.json`, this means
 
 ### Ruby Version Error
 
-If you see an error about Ruby version syntax, this is due to Netlify incorrectly detecting the project as a Ruby application instead of a Node.js application.
+If you see an error about Ruby version syntax or installation, this is related to how Netlify handles Ruby in the build environment.
 
 #### Steps to Fix:
 
 We've addressed this by:
-1. Explicitly telling Netlify this is a Node.js project in the netlify.toml file
-2. Adding runtime specification files: `.nvmrc`, `.ruby-version`, and `runtime.txt`
-3. Setting `NETLIFY_EXPERIMENTAL_BUILD_NODEJS_ONLY = "true"` in the environment configuration
+1. Specifying a valid Ruby version (2.7.2) in the netlify.toml file
+2. Adding a `.ruby-version` file with the same valid version
+3. Setting `NETLIFY_EXPERIMENTAL_BUILD_NODEJS_ONLY = "true"` in the environment configuration to prioritize Node.js
 
-If you continue seeing Ruby-related errors, check if there are any Ruby configuration files (like `Gemfile` or `.ruby-version` with syntax errors) in your repository and remove them.
+If you continue seeing Ruby-related errors, check if there are any Ruby configuration files (like `Gemfile`) in your repository and remove them.
 
 ### Python and Node.js Version Mismatch
 

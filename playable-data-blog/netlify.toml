@@ -8,9 +8,8 @@
   NODE_VERSION = "18"
   NPM_FLAGS = "--legacy-peer-deps"
   
-  # Explicitly disable Ruby
-  RUBY_VERSION = "0"
-  NETLIFY_USE_RUBY = "false"
+  # Use a valid Ruby version instead of trying to disable it
+  RUBY_VERSION = "2.7.2"
   
   # Python configuration - use a version definitely available in Netlify
   PYTHON_VERSION = "3.8" 

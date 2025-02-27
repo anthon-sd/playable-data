@@ -75,8 +75,8 @@ try {
   fs.writeFileSync(path.join(REPO_DIR, '.node-version'), '18.18.0');
   console.log('Created .node-version file');
   
-  // Create .ruby-version
-  fs.writeFileSync(path.join(REPO_DIR, '.ruby-version'), '0.0.0');
+  // Create .ruby-version with a valid version (instead of 0.0.0)
+  fs.writeFileSync(path.join(REPO_DIR, '.ruby-version'), '2.7.2');
   console.log('Created .ruby-version file');
   
   // Create .python-version
