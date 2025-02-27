@@ -83,8 +83,8 @@ try {
   fs.writeFileSync(path.join(REPO_DIR, '.python-version'), '3.8.0');
   console.log('Created .python-version file');
   
-  // Create runtime.txt with PYTHON version, not Node.js
-  fs.writeFileSync(path.join(REPO_DIR, 'runtime.txt'), 'python-3.8.0');
+  // Create runtime.txt with just the Python version number (not prefixed with "python-")
+  fs.writeFileSync(path.join(REPO_DIR, 'runtime.txt'), '3.8.0');
   console.log('Created runtime.txt file with Python version');
   
   // Create empty requirements.txt to indicate no Python dependencies

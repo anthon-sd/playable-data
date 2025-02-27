@@ -58,17 +58,17 @@ If you continue to see Python-related errors, consider:
 
 ### Python Version Format Error
 
-If you see an error like `definition not found: nodejs-18.x` during Python installation, this means there's confusion between the Node.js and Python versioning formats.
+If you see an error like `definition not found: python-3.8.0` during Python installation, this means there's an issue with the Python version format in the runtime files.
 
 #### Steps to Fix:
 
 This has been addressed by:
-1. Ensuring `runtime.txt` contains a proper Python version format (`python-3.8.0`)
-2. Setting `PYTHON_VERSION = "3.8.0"` with the exact version number in netlify.toml
+1. Ensuring `runtime.txt` contains just the version number (`3.8.0`) without any prefix
+2. Setting `PYTHON_VERSION = "3.8"` in netlify.toml (using major.minor format)
 3. Adding `MISE_PYTHON_DISABLE_AUTO = "true"` to prevent automatic version resolution
 4. Updating the bootstrap script to create all version files with the correct formats
 
-This prevents Netlify's version manager (mise) from confusing Node.js version syntax with Python version syntax.
+Netlify's version manager (mise) expects Python versions in a specific format. Using just the version number without prefixes works best.
 
 ## How Our Setup Works
 

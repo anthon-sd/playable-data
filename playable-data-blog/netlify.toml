@@ -12,8 +12,8 @@
   RUBY_VERSION = "0"
   NETLIFY_USE_RUBY = "false"
   
-  # Python configuration - specify exact version, avoid nodejs-style versioning
-  PYTHON_VERSION = "3.8.0" 
+  # Python configuration - use a version definitely available in Netlify
+  PYTHON_VERSION = "3.8" 
   PIP_DISABLE_PIP_VERSION_CHECK = "1"
   
   # Force Netlify to detect this as a Node.js project
