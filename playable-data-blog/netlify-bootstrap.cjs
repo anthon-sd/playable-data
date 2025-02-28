@@ -36,12 +36,21 @@ try {
 const REPO_DIR = '/opt/build/repo';
 console.log('Repository directory:', REPO_DIR);
 
+// Get Netlify environment variables
+const NETLIFY_BASE_DIR = process.env.NETLIFY_BASE_DIR || 'playable-data-blog';
+console.log('Netlify base directory:', NETLIFY_BASE_DIR);
+
 // This is where Netlify expects to find the built files based on netlify.toml
-const EXPECTED_OUTPUT_DIR = path.join(currentDir, 'dist');
+// It needs to account for the base directory specified in netlify.toml
+const EXPECTED_OUTPUT_DIR = path.join(REPO_DIR, NETLIFY_BASE_DIR, 'dist');
 console.log('Expected output directory:', EXPECTED_OUTPUT_DIR);
 
+// Also define the BUILD_OUTPUT_DIR where the actual build will create files
+const BUILD_OUTPUT_DIR = path.join(REPO_DIR, 'dist');
+console.log('Build output directory:', BUILD_OUTPUT_DIR);
+
 // Determine if we're in a subdirectory or not
-const isInSubdir = currentDir.includes('playable-data-blog') || 
+const isInSubdir = currentDir.includes(NETLIFY_BASE_DIR) || 
                   fs.existsSync(path.join(currentDir, 'package.json'));
 console.log('Is in correct subdirectory:', isInSubdir);
 
@@ -252,7 +261,8 @@ function createErrorPage(errorMessage = null) {
     <p><strong>Build timestamp:</strong> \${formattedDate}</p>
     <p><strong>Node.js version:</strong> \${process.version}</p>
     <p><strong>Expected output directory:</strong> \${EXPECTED_OUTPUT_DIR}</p>
-    <p><strong>Build directory:</strong> \${REPO_DIR}/dist</p>
+    <p><strong>Build output directory:</strong> \${BUILD_OUTPUT_DIR}</p>
+    <p><strong>Base directory setting:</strong> \${NETLIFY_BASE_DIR}</p>
   </div>
   
   <div class="footer">
@@ -351,13 +361,13 @@ try {
   console.log('Build completed successfully');
   
   // Check if the build created dist directory in REPO_DIR
-  if (fs.existsSync(path.join(REPO_DIR, 'dist'))) {
-    console.log('Build output directory exists at:', path.join(REPO_DIR, 'dist'));
+  if (fs.existsSync(BUILD_OUTPUT_DIR)) {
+    console.log('Build output directory exists at:', BUILD_OUTPUT_DIR);
     
     // List contents of the build directory to verify
     try {
       console.log('Contents of build output directory:');
-      const buildDirContents = fs.readdirSync(path.join(REPO_DIR, 'dist'));
+      const buildDirContents = fs.readdirSync(BUILD_OUTPUT_DIR);
       console.log(buildDirContents.join('\\n'));
       
       // Check if the directory has any HTML files (basic validation)
@@ -389,9 +399,9 @@ try {
     }
     
     // Copy the build output to the expected location
-    console.log(\`Copying build output from \${path.join(REPO_DIR, 'dist')} to \${EXPECTED_OUTPUT_DIR}\`);
+    console.log(\`Copying build output from \${BUILD_OUTPUT_DIR} to \${EXPECTED_OUTPUT_DIR}\`);
     try {
-      execSync(\`cp -r \${path.join(REPO_DIR, 'dist')}/* \${EXPECTED_OUTPUT_DIR}/\`, { stdio: 'inherit' });
+      execSync(\`cp -r \${BUILD_OUTPUT_DIR}/* \${EXPECTED_OUTPUT_DIR}/\`, { stdio: 'inherit' });
       console.log('Successfully copied build output to the expected location');
     } catch (copyError) {
       console.error('Error copying build output:', copyError.message);
@@ -413,8 +423,9 @@ try {
       console.error('Error verifying final output directory:', verifyError.message);
     }
   } else {
-    console.error('Build completed but dist directory not found in REPO_DIR');
-    createFallbackSite(new Error('Build completed but dist directory not found'));
+    console.error('Build completed but build output directory not found');
+    console.error(\`Expected to find build output at: \${BUILD_OUTPUT_DIR}\`);
+    createFallbackSite(new Error(\`Build completed but build output directory not found at \${BUILD_OUTPUT_DIR}\`));
   }
 } catch (error) {
   console.error('====== BUILD FAILED ======');

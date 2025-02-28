@@ -26,6 +26,9 @@
   
   # Npm warning ignoring
   npm_config_loglevel = "error"
+  
+  # Directory configuration for bootstrap script
+  NETLIFY_BASE_DIR = "playable-data-blog"
 
 # Set cache headers for static assets
 [[headers]]
