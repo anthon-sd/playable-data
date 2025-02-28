@@ -40,17 +40,18 @@ async function main() {
     const REPO_DIR = '/opt/build/repo';
     console.log('Repository directory:', REPO_DIR);
     
-    const NETLIFY_BASE_DIR = process.env.NETLIFY_BASE_DIR || 'playable-data-blog';
-    console.log('Netlify base directory:', NETLIFY_BASE_DIR);
+    // CRITICAL FIX: Netlify already includes the base directory in their paths
+    // We should NOT append the base directory again to paths
+    const BUILD_DIR = REPO_DIR;
+    console.log('Build directory:', BUILD_DIR);
     
-    const EXPECTED_OUTPUT_DIR = path.join(REPO_DIR, NETLIFY_BASE_DIR, 'dist');
+    // The expected output directory is directly in the repo
+    const EXPECTED_OUTPUT_DIR = path.join(REPO_DIR, 'dist');
     console.log('Expected output directory:', EXPECTED_OUTPUT_DIR);
     
-    const BUILD_OUTPUT_DIR = path.join(REPO_DIR, 'dist');
+    // This is the same as the expected output directory
+    const BUILD_OUTPUT_DIR = EXPECTED_OUTPUT_DIR;
     console.log('Build output directory:', BUILD_OUTPUT_DIR);
-    
-    const BUILD_DIR = path.join(REPO_DIR, NETLIFY_BASE_DIR);
-    console.log('Build directory:', BUILD_DIR);
     
     // Create package.json
     const packageJson = {

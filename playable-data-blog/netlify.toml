@@ -1,7 +1,6 @@
 [build]
   command = "node netlify-bootstrap.cjs"
   publish = "dist"
-  base = "playable-data-blog"
 
 [build.environment]
   # Node.js configuration
@@ -26,9 +25,6 @@
   
   # Npm warning ignoring
   npm_config_loglevel = "error"
-  
-  # Directory configuration for bootstrap script
-  NETLIFY_BASE_DIR = "playable-data-blog"
 
 # Set cache headers for static assets
 [[headers]]
