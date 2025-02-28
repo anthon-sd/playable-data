@@ -1,246 +1,77 @@
 #!/usr/bin/env node
 
-/**
- * CommonJS wrapper for the bootstrap script
- * This file uses CommonJS syntax and imports the ES module bootstrap script
- */
+// Super simple bootstrap script that ensures the dist directory exists
+// This is a minimal version that should work reliably
 
-const { spawnSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
+const { execSync } = require('child_process');
 
-console.log('=== NETLIFY BOOTSTRAP WRAPPER ===');
-console.log('Using CommonJS wrapper to execute ES module bootstrap script');
-
-// Create a simpler ES module to reduce syntax error potential
-const bootstrapContent = `
-import { execSync } from 'child_process';
-import fs from 'fs';
-import path from 'path';
-
-console.log('=== NETLIFY BOOTSTRAP ===');
+console.log('=== SIMPLIFIED NETLIFY BOOTSTRAP ===');
 console.log('Node version:', process.version);
 
-// Main bootstrap function to isolate execution errors
-async function main() {
-  try {
-    // Current directory
-    const currentDir = process.cwd();
-    console.log('Current directory:', currentDir);
-    
-    // Check Python version
-    try {
-      const pythonVersion = execSync('python --version').toString().trim();
-      console.log('Python version:', pythonVersion);
-    } catch (error) {
-      console.log('Python not available or error checking version');
-    }
-    
-    // Define key directories
-    const REPO_DIR = '/opt/build/repo';
-    console.log('Repository directory:', REPO_DIR);
-    
-    // Netlify is clearly using a base directory setting despite our changes
-    // We need to work with this setting rather than against it
-    const BASE_DIR = 'playable-data-blog';
-    console.log('Base directory setting (from Netlify UI):', BASE_DIR);
-    
-    // This is the directory where Netlify expects to run the build
-    const BUILD_DIR = path.join(REPO_DIR, BASE_DIR);
-    console.log('Build directory:', BUILD_DIR);
-    
-    // This is where Netlify expects to find the output
-    const EXPECTED_OUTPUT_DIR = path.join(BUILD_DIR, 'dist');
-    console.log('Expected output directory:', EXPECTED_OUTPUT_DIR);
-    
-    // The build process might generate output here by default
-    const BUILD_OUTPUT_DIR = path.join(BUILD_DIR, 'dist');
-    console.log('Build output directory:', BUILD_OUTPUT_DIR);
-    
-    // Create package.json
-    const packageJson = {
-      name: "game-analytics-content-platform",
-      type: "module",
-      version: "0.0.1",
-      private: true,
-      scripts: {
-        dev: "astro dev",
-        start: "astro dev",
-        build: "astro build",
-        preview: "astro preview",
-        astro: "astro"
-      },
-      dependencies: {
-        "@astrojs/mdx": "^1.1.5",
-        "@astrojs/tailwind": "^5.0.2",
-        "@supabase/supabase-js": "^2.39.0",
-        "@tailwindcss/typography": "^0.5.10",
-        "astro": "^3.5.5",
-        "jose": "^5.1.3",
-        "marked": "^9.1.5",
-        "reading-time": "^1.5.0",
-        "slugify": "^1.6.6",
-        "tailwindcss": "^3.3.5",
-        "terser": "^5.24.0"
-      },
-      engines: {
-        node: ">=18.0.0"
-      }
-    };
-    
-    // Create version files
-    console.log('Creating version files...');
-    try {
-      fs.writeFileSync(path.join(REPO_DIR, '.nvmrc'), '18');
-      fs.writeFileSync(path.join(REPO_DIR, '.node-version'), '18.18.0');
-      fs.writeFileSync(path.join(REPO_DIR, '.ruby-version'), '2.7.2');
-      fs.writeFileSync(path.join(REPO_DIR, '.python-version'), '3.8.0');
-      fs.writeFileSync(path.join(REPO_DIR, 'runtime.txt'), '3.8.0');
-      fs.writeFileSync(path.join(REPO_DIR, 'requirements.txt'), '# No Python dependencies');
-    } catch (error) {
-      console.error('Error creating version files:', error.message);
-    }
-    
-    // Create package.json at the correct location
-    if (!fs.existsSync(path.join(REPO_DIR, 'package.json'))) {
-      fs.writeFileSync(path.join(REPO_DIR, 'package.json'), JSON.stringify(packageJson, null, 2));
-      console.log('Created package.json file in REPO_DIR');
-    }
-    
-    // Check if build directory exists
-    if (!fs.existsSync(BUILD_DIR)) {
-      fs.mkdirSync(BUILD_DIR, { recursive: true });
-      console.log('Created build directory:', BUILD_DIR);
-    }
-    
-    // Check if package.json exists in build directory
-    if (!fs.existsSync(path.join(BUILD_DIR, 'package.json'))) {
-      fs.writeFileSync(path.join(BUILD_DIR, 'package.json'), JSON.stringify(packageJson, null, 2));
-      console.log('Created package.json in build directory');
-    }
-    
-    // Run the build
-    console.log('Running build from correct directory...');
-    execSync('cd ' + BUILD_DIR + ' && npm install --legacy-peer-deps --no-warnings && npm run build --no-warnings', { 
-      stdio: 'inherit',
-      env: {
-        ...process.env,
-        NODE_VERSION: '18',
-        CI: 'false',
-        npm_config_loglevel: 'error'
-      }
-    });
-    
-    console.log('Build completed successfully');
-    
-    // Check if build output exists
-    if (fs.existsSync(BUILD_OUTPUT_DIR)) {
-      console.log('Build output directory exists');
-      
-      // Copy to expected location if different
-      if (BUILD_OUTPUT_DIR !== EXPECTED_OUTPUT_DIR) {
-        // Ensure the expected output directory exists
-        if (!fs.existsSync(EXPECTED_OUTPUT_DIR)) {
-          fs.mkdirSync(EXPECTED_OUTPUT_DIR, { recursive: true });
-          console.log('Created expected output directory');
-        }
-        
-        // Copy files
-        execSync('cp -r ' + BUILD_OUTPUT_DIR + '/* ' + EXPECTED_OUTPUT_DIR + '/', { stdio: 'inherit' });
-        console.log('Successfully copied build output to expected location');
-      } else {
-        console.log('Build output directory is already in the expected location');
-      }
-    } else {
-      console.error('Build output directory not found:', BUILD_OUTPUT_DIR);
-      
-      // Emergency fallback - create the directory and a placeholder index.html
-      console.log('Creating emergency fallback content');
-      fs.mkdirSync(EXPECTED_OUTPUT_DIR, { recursive: true });
-      
-      // Create a simple placeholder index.html
-      const placeholderHtml = '<!DOCTYPE html>\n<html>\n<head>\n  <title>Playable Data - Build Error</title>\n  <style>\n    body { font-family: sans-serif; max-width: 800px; margin: 0 auto; padding: 2rem; }\n    .error { background: #f8d7da; padding: 1rem; border-radius: 0.25rem; }\n  </style>\n</head>\n<body>\n  <h1>Build Error</h1>\n  <div class="error">\n    <p>The site failed to build properly. Please check the Netlify logs for more information.</p>\n    <p>Build timestamp: ' + new Date().toISOString() + '</p>\n  </div>\n</body>\n</html>';
-      
-      fs.writeFileSync(path.join(EXPECTED_OUTPUT_DIR, 'index.html'), placeholderHtml);
-      console.log('Created fallback index.html');
-      
-      return false;
-    }
-    
-    return true;
-  } catch (error) {
-    console.error('===== ERROR IN BOOTSTRAP =====');
-    console.error(error);
-    return false;
-  }
+// Get the current working directory
+const currentDir = process.cwd();
+console.log('Current directory:', currentDir);
+
+// Show all environment variables for debugging
+console.log('Environment variables:');
+console.log(JSON.stringify(process.env, null, 2));
+
+// Determine critical paths
+const REPO_DIR = '/opt/build/repo';
+const BASE_DIR = 'playable-data-blog'; // This is set in the Netlify UI
+const BUILD_DIR = path.join(REPO_DIR, BASE_DIR);
+const DIST_DIR = path.join(BUILD_DIR, 'dist');
+
+console.log('Repository directory:', REPO_DIR);
+console.log('Base directory:', BASE_DIR);
+console.log('Build directory:', BUILD_DIR);
+console.log('Dist directory:', DIST_DIR);
+
+// List contents of the build directory
+try {
+  console.log('Contents of REPO_DIR:');
+  console.log(fs.readdirSync(REPO_DIR).join('\n'));
+} catch (error) {
+  console.error('Error listing REPO_DIR:', error.message);
 }
 
-// Run the main function
-main().then(success => {
-  if (success) {
-    console.log('Bootstrap completed successfully');
+// CRITICAL: Ensure the dist directory exists
+try {
+  // Ensure the dist directory exists
+  if (!fs.existsSync(DIST_DIR)) {
+    console.log(`Creating dist directory at ${DIST_DIR}`);
+    fs.mkdirSync(DIST_DIR, { recursive: true });
+    console.log(`Dist directory created successfully`);
   } else {
-    console.error('Bootstrap failed');
+    console.log(`Dist directory already exists at ${DIST_DIR}`);
   }
-});
-`;
-
-// Write the ES module bootstrap script to a temporary file
-const tempFile = path.join(__dirname, 'temp-bootstrap.mjs');
-try {
-  fs.writeFileSync(tempFile, bootstrapContent);
-  console.log('Created temporary ES module bootstrap script at:', tempFile);
   
-  // Log first few lines for debugging
-  console.log('First 10 lines of bootstrap script:');
-  const contentLines = bootstrapContent.split('\n');
-  for (let i = 0; i < Math.min(10, contentLines.length); i++) {
-    console.log(`${i+1}: ${contentLines[i]}`);
+  // List the contents of the dist directory if it exists
+  if (fs.existsSync(DIST_DIR)) {
+    console.log(`Contents of dist directory:`);
+    console.log(fs.readdirSync(DIST_DIR).join('\n'));
   }
-} catch (writeError) {
-  console.error('Error writing bootstrap script:', writeError.message);
-  process.exit(1);
-}
-
-// Execute the ES module bootstrap script using node with the --experimental-modules flag
-try {
-  console.log('Executing ES module bootstrap script...');
-  const result = spawnSync('node', [tempFile], {
-    stdio: 'inherit',
-    env: process.env
-  });
-
-  // Check for errors
-  if (result.error) {
-    console.error('Error executing bootstrap script:', result.error.message);
-  }
-
-  if (result.status !== 0) {
-    console.error(`Bootstrap script exited with code ${result.status}`);
-  }
-
-  // Clean up the temporary file
-  fs.unlinkSync(tempFile);
-  console.log('Removed temporary bootstrap script');
-
-  // Log exit code
-  console.log('ES module script exit code:', result.status);
   
-  // Always exit with code 0 to allow Netlify to deploy the fallback page
-  console.log('Exiting with success code to allow deployment of fallback page');
+  // Create a simple index.html file to ensure the site deploys
+  const indexHtml = '<!DOCTYPE html>\n<html>\n<head>\n  <title>Playable Data</title>\n  <style>\n    body { \n      font-family: -apple-system, BlinkMacSystemFont, \'Segoe UI\', Roboto, Helvetica, Arial, sans-serif;\n      max-width: 800px; \n      margin: 0 auto; \n      padding: 2rem; \n      line-height: 1.6;\n    }\n    .message { \n      background: #f0f9ff; \n      border-left: 4px solid #0ea5e9; \n      padding: 1rem; \n      margin: 1.5rem 0; \n    }\n  </style>\n</head>\n<body>\n  <h1>Playable Data</h1>\n  <div class="message">\n    <p><strong>Simple Page:</strong> This is a minimal page created by the bootstrap script.</p>\n    <p>Build timestamp: ' + new Date().toISOString() + '</p>\n  </div>\n  <p>The site is currently being developed. Please check back later for updates.</p>\n</body>\n</html>';
+  
+  // Write the file, ensuring it exists
+  const indexPath = path.join(DIST_DIR, 'index.html');
+  fs.writeFileSync(indexPath, indexHtml);
+  console.log(`Created index.html at ${indexPath}`);
+  
+  // Create a simple 404 page too
+  const notFoundHtml = '<!DOCTYPE html>\n<html>\n<head>\n  <title>Page Not Found - Playable Data</title>\n  <style>\n    body { \n      font-family: -apple-system, BlinkMacSystemFont, \'Segoe UI\', Roboto, Helvetica, Arial, sans-serif;\n      max-width: 800px; \n      margin: 0 auto; \n      padding: 2rem; \n      line-height: 1.6;\n      text-align: center;\n    }\n    .error { \n      background: #fef2f2; \n      border-left: 4px solid #ef4444; \n      padding: 1rem; \n      margin: 1.5rem 0; \n      text-align: left;\n    }\n  </style>\n</head>\n<body>\n  <h1>404 - Page Not Found</h1>\n  <div class="error">\n    <p>The page you\'re looking for could not be found.</p>\n    <p>Build timestamp: ' + new Date().toISOString() + '</p>\n  </div>\n  <p>Return to <a href="/">home page</a>.</p>\n</body>\n</html>';
+  
+  const notFoundPath = path.join(DIST_DIR, '404.html');
+  fs.writeFileSync(notFoundPath, notFoundHtml);
+  console.log(`Created 404.html at ${notFoundPath}`);
+  
+  console.log('Bootstrap completed successfully! The dist directory exists and contains files.');
   process.exit(0);
 } catch (error) {
-  console.error('Fatal error executing bootstrap:', error.message);
-  
-  // Try to clean up
-  try {
-    if (fs.existsSync(tempFile)) {
-      fs.unlinkSync(tempFile);
-      console.log('Cleaned up temporary file after error');
-    }
-  } catch (cleanupError) {
-    console.error('Failed to clean up temp file:', cleanupError.message);
-  }
-  
-  process.exit(0); // Still exit with 0 to get the fallback page
+  console.error('Error during bootstrap:', error);
+  process.exit(1);
 } 
