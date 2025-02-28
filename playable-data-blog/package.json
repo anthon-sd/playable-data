@@ -7,7 +7,7 @@
     "dev": "astro dev",
     "start": "astro dev",
     "prebuild": "node prepare-netlify-build.js",
-    "build": "node netlify-bootstrap.js",
+    "build": "node netlify-bootstrap.cjs",
     "preview": "astro preview",
     "astro": "astro",
     "debug": "node netlify-debug.js",
