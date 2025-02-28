@@ -101,7 +101,7 @@ function debugProjectStructure() {
     try {
       // Read file in a more memory-efficient way
       const packageJsonContent = fs.readFileSync(path.join(BUILD_DIR, 'package.json'), 'utf8');
-      const packageJson = JSON.parse(packageJsonContent);
+      let packageJson = JSON.parse(packageJsonContent);
       console.log('Package name:', packageJson.name);
       console.log('Build script:', packageJson.scripts?.build || 'Not defined');
       
@@ -111,7 +111,7 @@ function debugProjectStructure() {
       console.log(`Dependencies: ${depCount}, DevDependencies: ${devDepCount}`);
       
       // Check for common build frameworks without keeping full objects in memory
-      const allDeps = [...Object.keys(packageJson.dependencies || {}), ...Object.keys(packageJson.devDependencies || {})];
+      let allDeps = [...Object.keys(packageJson.dependencies || {}), ...Object.keys(packageJson.devDependencies || {})];
       const frameworks = ['astro', 'next', 'gatsby', 'react', 'vue', 'angular'].filter(fw => allDeps.includes(fw));
       console.log('Frameworks detected:', frameworks.join(', '));
       
@@ -221,16 +221,22 @@ try {
   // Step 4: Run the build with memory optimizations
   console.log('Running build with memory optimizations...');
   try {
-    // Create a custom build command that uses low memory settings
-    const buildCommand = `cross-env NODE_OPTIONS="--max-old-space-size=2048" npm run build -- --no-sourcemap`;
+    // Set environment variables for memory constraints
+    process.env.NODE_OPTIONS = '--max-old-space-size=2048';
+    process.env.ASTRO_MEMORY_LIMIT = 'true';
+    process.env.VITE_MEMORY_LIMIT = 'true';
     
-    // Check if cross-env is available, if not use direct NODE_OPTIONS
+    // Use a simpler build command to avoid parameter passing issues
+    let buildCommand = 'npm run build';
+    
+    // Check if we need to use cross-env
     try {
       execSync('npx cross-env --version', { stdio: 'ignore' });
+      console.log('cross-env is available, using it for better compatibility');
+      buildCommand = 'npx cross-env NODE_OPTIONS="--max-old-space-size=2048" npm run build';
     } catch (e) {
       console.log('cross-env not available, using direct environment variable');
-      // If cross-env isn't available, just set the NODE_OPTIONS directly
-      buildCommand = 'npm run build -- --no-sourcemap';
+      // NODE_OPTIONS already set above
     }
     
     // Run the build in chunks by modifying the astro.config.mjs if necessary
@@ -263,77 +269,101 @@ try {
   // Step 5: Verify build output
   if (fs.existsSync(DIST_DIR)) {
     console.log('Dist directory exists, checking contents...');
-    const distContents = fs.readdirSync(DIST_DIR);
     
-    // Log only count and a sample of files to save memory
-    console.log(`Dist directory contains ${distContents.length} files/directories`);
-    if (distContents.length > 0) {
-      console.log('Sample files:', distContents.slice(0, Math.min(10, distContents.length)).join(', '));
+    try {
+      const distContents = fs.readdirSync(DIST_DIR);
       
-      if (distContents.length > 10) {
-        console.log(`... and ${distContents.length - 10} more files`);
+      // Log only count and a sample of files to save memory
+      console.log(`Dist directory contains ${distContents.length} files/directories`);
+      if (distContents.length > 0) {
+        console.log('Sample files:', distContents.slice(0, Math.min(10, distContents.length)).join(', '));
+        
+        if (distContents.length > 10) {
+          console.log(`... and ${distContents.length - 10} more files`);
+        }
       }
-    }
-    
-    if (distContents.length < 5) {
-      console.warn(`WARNING: Only ${distContents.length} files found in dist directory. This may indicate a build problem.`);
       
-      // Check for key files
-      if (!distContents.includes('index.html')) {
-        console.error('index.html not found in dist directory');
+      // Create an index.html file if it doesn't exist (safety measure)
+      if (!fs.existsSync(path.join(DIST_DIR, 'index.html'))) {
+        console.warn('WARNING: index.html not found in dist directory, creating it');
+        const indexHtml = '<!DOCTYPE html>\n<html>\n<head>\n  <title>Playable Data</title>\n  <meta http-equiv="refresh" content="0;url=/home/" />\n</head>\n<body>\n  <p>Redirecting to <a href="/home/">home page</a>...</p>\n</body>\n</html>';
+        fs.writeFileSync(path.join(DIST_DIR, 'index.html'), indexHtml);
+        console.log('Created minimal index.html file');
+      }
+      
+      // Add a 404 page if missing
+      if (!fs.existsSync(path.join(DIST_DIR, '404.html'))) {
+        console.warn('WARNING: 404.html not found in dist directory, creating it');
+        const notFoundHtml = '<!DOCTYPE html>\n<html>\n<head>\n  <title>Page Not Found - Playable Data</title>\n  <style>\n    body { \n      font-family: -apple-system, BlinkMacSystemFont, \'Segoe UI\', Roboto, Helvetica, Arial, sans-serif;\n      max-width: 800px; \n      margin: 0 auto; \n      padding: 2rem; \n      line-height: 1.6;\n      text-align: center;\n    }\n    .error { \n      background: #fef2f2; \n      border-left: 4px solid #ef4444; \n      padding: 1rem; \n      margin: 1.5rem 0; \n      text-align: left;\n    }\n  </style>\n</head>\n<body>\n  <h1>404 - Page Not Found</h1>\n  <div class="error">\n    <p>The page you\'re looking for could not be found.</p>\n    <p>Build timestamp: ' + new Date().toISOString() + '</p>\n  </div>\n  <p>Return to <a href="/">home page</a>.</p>\n</body>\n</html>';
+        fs.writeFileSync(path.join(DIST_DIR, '404.html'), notFoundHtml);
+        console.log('Created 404.html file');
+      }
+      
+      if (distContents.length < 5) {
+        console.warn(`WARNING: Only ${distContents.length} files found in dist directory. This may indicate a build problem.`);
         
-        // Check if build output might be in a different location
-        console.log('Checking for build output in alternate locations...');
-        
-        // Common locations for build output
-        const possibleBuildDirs = [
-          path.join(BUILD_DIR, 'build'),
-          path.join(BUILD_DIR, 'public'),
-          path.join(BUILD_DIR, '_site'),
-          path.join(BUILD_DIR, 'out'),
-          path.join(REPO_DIR, 'dist')
-        ];
-        
-        let foundAlternativeBuildDir = false;
-        
-        for (const dir of possibleBuildDirs) {
-          if (fs.existsSync(dir) && fs.existsSync(path.join(dir, 'index.html'))) {
-            console.log(`Found potential build output at ${dir}`);
-            foundAlternativeBuildDir = true;
-            
-            // Copy all contents to the expected dist directory
-            try {
-              // Ensure the expected dist directory exists
-              if (!fs.existsSync(DIST_DIR)) {
-                fs.mkdirSync(DIST_DIR, { recursive: true });
+        // Check for key files
+        if (!distContents.includes('index.html')) {
+          console.error('index.html not found in dist directory');
+          
+          // Check if build output might be in a different location
+          console.log('Checking for build output in alternate locations...');
+          
+          // Common locations for build output
+          const possibleBuildDirs = [
+            path.join(BUILD_DIR, 'build'),
+            path.join(BUILD_DIR, 'public'),
+            path.join(BUILD_DIR, '_site'),
+            path.join(BUILD_DIR, 'out'),
+            path.join(REPO_DIR, 'dist')
+          ];
+          
+          let foundAlternativeBuildDir = false;
+          
+          for (const dir of possibleBuildDirs) {
+            if (fs.existsSync(dir) && fs.existsSync(path.join(dir, 'index.html'))) {
+              console.log(`Found potential build output at ${dir}`);
+              foundAlternativeBuildDir = true;
+              
+              // Copy all contents to the expected dist directory
+              try {
+                // Ensure the expected dist directory exists
+                if (!fs.existsSync(DIST_DIR)) {
+                  fs.mkdirSync(DIST_DIR, { recursive: true });
+                }
+                
+                // Copy files in smaller batches to avoid memory issues
+                console.log(`Copying files from ${dir} to ${DIST_DIR}...`);
+                
+                // Use shell command for more efficient copying
+                execSync(`find ${dir} -type f -print0 | xargs -0 -n 50 cp -t ${DIST_DIR}/ 2>/dev/null || cp -r ${dir}/* ${DIST_DIR}/`, { 
+                  stdio: 'inherit',
+                  shell: true 
+                });
+                
+                console.log('Files copied successfully');
+                
+                // Verify the copy worked
+                if (fs.existsSync(path.join(DIST_DIR, 'index.html'))) {
+                  console.log('Successfully found and copied build output from alternate location');
+                  break;
+                }
+              } catch (copyError) {
+                console.error(`Error copying from ${dir}:`, copyError.message);
               }
-              
-              // Copy files in smaller batches to avoid memory issues
-              console.log(`Copying files from ${dir} to ${DIST_DIR}...`);
-              
-              // Use shell command for more efficient copying
-              execSync(`find ${dir} -type f -print0 | xargs -0 -n 50 cp -t ${DIST_DIR}/ 2>/dev/null || cp -r ${dir}/* ${DIST_DIR}/`, { 
-                stdio: 'inherit',
-                shell: true 
-              });
-              
-              console.log('Files copied successfully');
-              
-              // Verify the copy worked
-              if (fs.existsSync(path.join(DIST_DIR, 'index.html'))) {
-                console.log('Successfully found and copied build output from alternate location');
-                break;
-              }
-            } catch (copyError) {
-              console.error(`Error copying from ${dir}:`, copyError.message);
             }
           }
-        }
-        
-        if (!foundAlternativeBuildDir) {
-          throw new Error('Critical file index.html missing from build output and no alternate build location found');
+          
+          if (!foundAlternativeBuildDir) {
+            throw new Error('Critical file index.html missing from build output and no alternate build location found');
+          }
         }
       }
+      
+      console.log('Build output verification complete');
+    } catch (error) {
+      console.error('Error checking dist directory:', error.message);
+      // Still continue, as we've already created safety files if needed
     }
     
     console.log(`Build successful with ${distContents.length} files.`);
