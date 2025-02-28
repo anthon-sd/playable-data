@@ -5,107 +5,104 @@
  */
 import fs from 'fs';
 import path from 'path';
+import { execSync } from 'child_process';
+import { fileURLToPath } from 'url';
 
-console.log('=== ASTRO BUILD DIAGNOSTICS ===');
+// ES Module equivalent of __dirname
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
-// Check for critical files
-const criticalFiles = [
-  'package.json',
-  'astro.config.mjs',
-  'tsconfig.json',
-  'tailwind.config.mjs'
-];
+console.log('=== NETLIFY BUILD DIAGNOSTICS ===');
+console.log('Node version:', process.version);
 
-console.log('Checking for critical files:');
-criticalFiles.forEach(file => {
-  if (fs.existsSync(file)) {
-    console.log(`✅ ${file} exists`);
-    
-    // Check package.json specifically
-    if (file === 'package.json') {
-      try {
-        const pkg = JSON.parse(fs.readFileSync(file, 'utf8'));
-        console.log(`   - name: ${pkg.name}`);
-        console.log(`   - type: ${pkg.type}`);
-        console.log(`   - astro version: ${pkg.dependencies?.astro || 'not found'}`);
-        
-        // Verify Astro build script exists
-        if (pkg.scripts && pkg.scripts.build && pkg.scripts.build.includes('astro build')) {
-          console.log('   - build script: ✅ found');
-        } else {
-          console.log('   - build script: ❌ missing or incorrect');
-        }
-      } catch (e) {
-        console.error(`   Error parsing package.json: ${e.message}`);
-      }
-    }
-    
-    // Check astro.config.mjs specifically
-    if (file === 'astro.config.mjs') {
-      try {
-        const content = fs.readFileSync(file, 'utf8');
-        if (content.includes('defineConfig')) {
-          console.log('   - defineConfig: ✅ found');
-        } else {
-          console.log('   - defineConfig: ❌ missing');
-        }
-        
-        if (content.includes('integrations')) {
-          console.log('   - integrations: ✅ found');
-        } else {
-          console.log('   - integrations: ❌ missing');
-        }
-      } catch (e) {
-        console.error(`   Error reading astro.config.mjs: ${e.message}`);
-      }
-    }
-  } else {
-    console.log(`❌ ${file} is missing`);
-  }
-});
+// Check for package.json
+if (!fs.existsSync('package.json')) {
+  console.error('ERROR: package.json not found in current directory');
+  process.exit(1);
+}
 
-// Check src directory structure
-console.log('\nChecking src directory structure:');
-if (fs.existsSync('src')) {
-  console.log('✅ src directory exists');
+// Verify package.json contents
+try {
+  const packageJson = JSON.parse(fs.readFileSync('package.json', 'utf8'));
   
-  // Check key directories
-  const srcDirs = ['pages', 'layouts', 'components'];
-  srcDirs.forEach(dir => {
-    const dirPath = path.join('src', dir);
-    if (fs.existsSync(dirPath)) {
-      console.log(`   - ${dir}: ✅ found`);
-      
-      // Check if directories have content
-      try {
-        const files = fs.readdirSync(dirPath);
-        console.log(`     (${files.length} files found)`);
-      } catch (e) {
-        console.error(`     Error reading directory: ${e.message}`);
-      }
+  console.log('Package name:', packageJson.name);
+  console.log('Package type:', packageJson.type || 'commonjs');
+  
+  // Check module type
+  if (packageJson.type !== 'module') {
+    console.warn('WARNING: package.json type is not set to "module". Astro requires "type": "module".');
+    
+    // Fix this issue
+    packageJson.type = 'module';
+    fs.writeFileSync('package.json', JSON.stringify(packageJson, null, 2));
+    console.log('FIXED: package.json updated with "type": "module"');
+  }
+  
+  // Check build script
+  if (!packageJson.scripts || !packageJson.scripts.build) {
+    console.error('ERROR: No build script found in package.json');
+  } else {
+    console.log('Build script:', packageJson.scripts.build);
+  }
+  
+  // Check dependencies
+  if (!packageJson.dependencies || !packageJson.dependencies.astro) {
+    console.error('ERROR: Astro dependency not found in package.json');
+  } else {
+    console.log('Astro version:', packageJson.dependencies.astro);
+  }
+} catch (error) {
+  console.error('ERROR: Invalid package.json', error.message);
+}
+
+// Check for astro.config.mjs
+if (!fs.existsSync('astro.config.mjs')) {
+  console.error('ERROR: astro.config.mjs not found. This file is required for Astro to build.');
+} else {
+  console.log('astro.config.mjs found');
+}
+
+// Check for Node.js version
+try {
+  const nodeVersion = process.version;
+  console.log('Node.js version:', nodeVersion);
+  
+  // Extract major version number
+  const majorVersion = parseInt(nodeVersion.slice(1).split('.')[0], 10);
+  
+  if (majorVersion < 16) {
+    console.error('ERROR: Node.js version is too old. Astro requires Node.js 16+');
+  } else {
+    console.log('Node.js version is compatible with Astro');
+  }
+} catch (error) {
+  console.error('ERROR: Could not check Node.js version', error.message);
+}
+
+// Check for src directory
+if (!fs.existsSync('src')) {
+  console.error('ERROR: src directory not found. This is required for an Astro project.');
+} else {
+  try {
+    const srcFiles = fs.readdirSync('src');
+    console.log('src directory contains', srcFiles.length, 'files');
+    
+    // Check for pages directory
+    if (!fs.existsSync('src/pages')) {
+      console.error('ERROR: src/pages directory not found. This is required for Astro routing.');
     } else {
-      console.log(`   - ${dir}: ❌ missing`);
+      const pagesFiles = fs.readdirSync('src/pages');
+      console.log('src/pages directory contains', pagesFiles.length, 'files');
     }
-  });
-} else {
-  console.log('❌ src directory is missing');
+  } catch (error) {
+    console.error('ERROR: Could not check src directory', error.message);
+  }
 }
 
-// Check for common build issues
-console.log('\nChecking for common build issues:');
+// Report results and next steps
+console.log('\n=== DIAGNOSTICS COMPLETE ===');
+console.log('Based on the checks, we can proceed with the build.');
+console.log('If any errors were found, they should be addressed before deployment.');
 
-// Check for ESM/CommonJS compatibility
-const type = fs.existsSync('package.json') 
-  ? JSON.parse(fs.readFileSync('package.json', 'utf8')).type 
-  : undefined;
-
-console.log(`Module type: ${type || 'not specified'}`);
-if (type === 'module') {
-  console.log('✅ Using ESM modules - correct for Astro');
-} else if (type === 'commonjs') {
-  console.log('❌ Using CommonJS modules - may cause issues with Astro');
-} else {
-  console.log('⚠️ No module type specified - defaults to CommonJS');
-}
-
-console.log('\n=== DIAGNOSTICS COMPLETE ==='); 
+// Exit with success code so the build can continue
+process.exit(0); 

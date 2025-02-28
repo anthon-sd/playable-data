@@ -3,9 +3,14 @@
 // Ultra-minimal bootstrap script that focuses on successful deployment
 // without using excessive memory
 
-const fs = require('fs');
-const path = require('path');
-const { execSync, spawnSync } = require('child_process');
+import { execSync, spawnSync } from 'child_process';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+// ES Module equivalent of __dirname
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 console.log('=== ULTRA-MINIMAL NETLIFY BOOTSTRAP ===');
 console.log('Node version:', process.version);

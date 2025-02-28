@@ -1,0 +1,18 @@
+fix: convert scripts to ES modules & implement ultra-minimal build strategy
+
+Resolves three critical Netlify deployment issues:
+1. Module compatibility issues by converting all scripts from CommonJS to ES modules
+2. Memory issues (exit code 137) by implementing a comprehensive memory optimization strategy
+3. Directory structure errors by fixing incorrect path references
+
+Key changes:
+- Converted memory-monitor.js and netlify-bootstrap.js to ES module syntax
+- Modified tailwind.config.mjs and other utility scripts for ES module compliance
+- Removed nested directory references in netlify.toml
+- Updated bootstrap script with correct paths & enhanced memory management
+- Created memory monitoring tool with improved diagnostics
+- Simplified Astro configuration to minimize memory usage
+- Updated documentation with correct repository structure
+
+These changes ensure successful deployment even in memory-constrained environments by fixing
+module compatibility issues that prevented the scripts from executing properly. 

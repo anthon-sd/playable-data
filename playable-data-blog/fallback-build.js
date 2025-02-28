@@ -6,9 +6,18 @@
  */
 import fs from 'fs';
 import path from 'path';
+import { fileURLToPath } from 'url';
+
+// ES Module equivalent of __dirname
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 console.log('=== EMERGENCY FALLBACK BUILD ===');
 console.log('Normal build failed. Creating minimal static site...');
+
+// Configure paths
+const DIST_DIR = path.join(__dirname, 'dist');
+const ASSETS_DIR = path.join(DIST_DIR, 'assets');
 
 // Create dist directory if it doesn't exist
 if (!fs.existsSync('dist')) {

@@ -1,6 +1,6 @@
 [build]
   publish = "dist"
-  command = "node memory-monitor.js && node netlify-bootstrap.cjs"
+  command = "node memory-monitor.js && node netlify-bootstrap.js"
   
 [build.environment]
   NODE_VERSION = "16"

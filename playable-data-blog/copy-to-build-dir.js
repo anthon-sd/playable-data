@@ -7,87 +7,97 @@
 import fs from 'fs';
 import path from 'path';
 import { execSync } from 'child_process';
+import { fileURLToPath } from 'url';
 
-// Detect Netlify environment
-const isNetlify = process.env.NETLIFY === 'true';
-const buildDir = process.env.NETLIFY_BUILD_BASE || '/opt/build/repo';
+// ES Module equivalent of __dirname
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
-console.log('=== NETLIFY BUILD DIRECTORY SETUP ===');
-console.log('Current directory:', process.cwd());
-console.log('Is Netlify environment:', isNetlify);
-console.log('Build directory:', buildDir);
+// Configuration
+const SOURCE_DIR = __dirname;
+const BUILD_BASE = process.env.NETLIFY_BUILD_BASE || '/opt/build/repo';
+const TARGET_DIR = BUILD_BASE;
 
-// Function to ensure a directory exists
-function ensureDirExists(dir) {
-  if (!fs.existsSync(dir)) {
-    console.log(`Creating directory: ${dir}`);
-    fs.mkdirSync(dir, { recursive: true });
-  }
-}
+console.log('=== COPYING FILES TO BUILD DIRECTORY ===');
+console.log('Source directory:', SOURCE_DIR);
+console.log('Target directory:', TARGET_DIR);
 
-// List of critical files to copy
-const criticalFiles = [
+// Files to copy
+const filesToCopy = [
   'package.json',
   'package-lock.json',
+  '.nvmrc',
+  '.node-version',
   'astro.config.mjs',
-  'tsconfig.json',
   'tailwind.config.mjs',
-  'vite.config.js',
-  '.npmrc',
-  'diagnose-build.js',
-  'fallback-build.js',
-  'prepare-netlify-build.js'
+  'tsconfig.json',
+  'netlify.toml',
+  'netlify-bootstrap.js',
+  'memory-monitor.js'
 ];
 
-// List of critical directories to copy
-const criticalDirs = [
+// Copy each file
+filesToCopy.forEach(file => {
+  const sourcePath = path.join(SOURCE_DIR, file);
+  const targetPath = path.join(TARGET_DIR, file);
+  
+  try {
+    if (fs.existsSync(sourcePath)) {
+      fs.copyFileSync(sourcePath, targetPath);
+      console.log(`✅ Copied ${file}`);
+    } else {
+      console.log(`⚠️ File not found: ${file}`);
+    }
+  } catch (error) {
+    console.error(`❌ Error copying ${file}:`, error.message);
+  }
+});
+
+// Copy directories
+const directoriesToCopy = [
   'src',
   'public'
 ];
 
-// Only do this in Netlify environment and if we need to
-if (isNetlify && buildDir !== process.cwd()) {
-  console.log('Setting up build directory...');
-  
-  // Copy critical files
-  criticalFiles.forEach(file => {
-    if (fs.existsSync(file)) {
-      const targetPath = path.join(buildDir, file);
-      console.log(`Copying ${file} to ${targetPath}`);
-      fs.copyFileSync(file, targetPath);
-    } else {
-      console.log(`Warning: ${file} not found`);
-    }
-  });
-  
-  // Copy critical directories
-  criticalDirs.forEach(dir => {
-    if (fs.existsSync(dir)) {
-      const targetDir = path.join(buildDir, dir);
-      console.log(`Copying directory ${dir} to ${targetDir}`);
-      ensureDirExists(targetDir);
-      
-      // Simple copy for directories
-      try {
-        execSync(`cp -r ${dir}/* ${targetDir}/`, { stdio: 'inherit' });
-      } catch (error) {
-        console.error(`Error copying directory ${dir}:`, error.message);
-      }
-    } else {
-      console.log(`Warning: Directory ${dir} not found`);
-    }
-  });
-  
-  // Print contents of build directory
-  console.log('Build directory contents:');
-  try {
-    const files = fs.readdirSync(buildDir);
-    console.log(files.join('\n'));
-  } catch (error) {
-    console.error('Error listing build directory:', error.message);
+function copyDirectory(source, target) {
+  // Create target directory if it doesn't exist
+  if (!fs.existsSync(target)) {
+    fs.mkdirSync(target, { recursive: true });
   }
-} else {
-  console.log('Skipping build directory setup - already in correct directory or not on Netlify');
+  
+  // Get all items in source directory
+  const items = fs.readdirSync(source);
+  
+  items.forEach(item => {
+    const sourcePath = path.join(source, item);
+    const targetPath = path.join(target, item);
+    const stats = fs.statSync(sourcePath);
+    
+    if (stats.isDirectory()) {
+      // Recursively copy subdirectory
+      copyDirectory(sourcePath, targetPath);
+    } else {
+      // Copy file
+      fs.copyFileSync(sourcePath, targetPath);
+    }
+  });
 }
 
-console.log('=== BUILD DIRECTORY SETUP COMPLETE ==='); 
+// Copy each directory
+directoriesToCopy.forEach(dir => {
+  const sourceDir = path.join(SOURCE_DIR, dir);
+  const targetDir = path.join(TARGET_DIR, dir);
+  
+  try {
+    if (fs.existsSync(sourceDir)) {
+      copyDirectory(sourceDir, targetDir);
+      console.log(`✅ Copied directory ${dir}`);
+    } else {
+      console.log(`⚠️ Directory not found: ${dir}`);
+    }
+  } catch (error) {
+    console.error(`❌ Error copying directory ${dir}:`, error.message);
+  }
+});
+
+console.log('=== COPY COMPLETE ==='); 

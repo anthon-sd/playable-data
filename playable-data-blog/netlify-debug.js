@@ -1,56 +1,109 @@
-// CommonJS version for compatibility
-const fs = require('fs');
-const path = require('path');
-const { execSync } = require('child_process');
+import fs from 'fs';
+import path from 'path';
+import { execSync } from 'child_process';
+import { fileURLToPath } from 'url';
 
-console.log('=== NETLIFY DEPLOYMENT DEBUG INFO ===');
-console.log('Current working directory:', process.cwd());
-console.log('\nEnvironment detection:');
-console.log('NETLIFY:', process.env.NETLIFY);
-console.log('NETLIFY_LOCAL:', process.env.NETLIFY_LOCAL);
-console.log('CONTEXT:', process.env.CONTEXT);
-console.log('NODE_VERSION:', process.env.NODE_VERSION);
+// ES Module equivalent of __dirname
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
-console.log('\nDirectory contents:');
-try {
-  const files = fs.readdirSync('.');
-  console.log(files.join('\n'));
-} catch (err) {
-  console.error('Error reading directory:', err);
+// Get information about the system
+function getSystemInfo() {
+  console.log('=== NETLIFY DEBUG INFO ===');
+  console.log('Date:', new Date().toISOString());
+  
+  try {
+    console.log('\n=== NODE INFO ===');
+    console.log('Node Version:', process.version);
+    console.log('Node Executable:', process.execPath);
+    console.log('Platform:', process.platform);
+    console.log('Architecture:', process.arch);
+    
+    console.log('\n=== MEMORY INFO ===');
+    const mem = process.memoryUsage();
+    console.log('RSS:', Math.round(mem.rss / 1024 / 1024), 'MB');
+    console.log('Heap Total:', Math.round(mem.heapTotal / 1024 / 1024), 'MB');
+    console.log('Heap Used:', Math.round(mem.heapUsed / 1024 / 1024), 'MB');
+    console.log('External:', Math.round(mem.external / 1024 / 1024), 'MB');
+    
+    console.log('\n=== ENVIRONMENT ===');
+    console.log('NODE_OPTIONS:', process.env.NODE_OPTIONS || 'not set');
+    console.log('NODE_ENV:', process.env.NODE_ENV || 'not set');
+    
+    // Check for Netlify-specific environment variables
+    const netlifyVars = Object.keys(process.env)
+      .filter(key => key.startsWith('NETLIFY'))
+      .reduce((obj, key) => {
+        obj[key] = process.env[key];
+        return obj;
+      }, {});
+    
+    console.log('\n=== NETLIFY ENVIRONMENT ===');
+    console.log(JSON.stringify(netlifyVars, null, 2));
+    
+    console.log('\n=== REPOSITORY INFO ===');
+    try {
+      const gitInfo = execSync('git remote -v && git branch --show-current').toString();
+      console.log(gitInfo);
+    } catch (e) {
+      console.log('Git information not available');
+    }
+    
+    console.log('\n=== DIRECTORY STRUCTURE ===');
+    console.log('Current Working Directory:', process.cwd());
+    checkDir(process.cwd());
+    
+    console.log('\n=== PACKAGE.JSON ===');
+    try {
+      const pkgPath = path.join(process.cwd(), 'package.json');
+      if (fs.existsSync(pkgPath)) {
+        const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
+        console.log('Name:', pkg.name);
+        console.log('Version:', pkg.version);
+        console.log('Type:', pkg.type || 'commonjs');
+        console.log('Scripts:');
+        for (const [name, script] of Object.entries(pkg.scripts || {})) {
+          console.log(`  ${name}: ${script}`);
+        }
+        console.log('Dependencies Count:', Object.keys(pkg.dependencies || {}).length);
+        console.log('DevDependencies Count:', Object.keys(pkg.devDependencies || {}).length);
+      } else {
+        console.log('package.json not found');
+      }
+    } catch (e) {
+      console.log('Error reading package.json:', e.message);
+    }
+    
+  } catch (error) {
+    console.error('Error gathering debug info:', error);
+  }
+  
+  console.log('\n=== DEBUG INFO COMPLETE ===');
 }
 
-console.log('\nPackage.json contents (if exists):');
-try {
-  if (fs.existsSync('./package.json')) {
-    const packageJson = fs.readFileSync('./package.json', 'utf8');
-    console.log(packageJson);
-  } else {
-    console.log('package.json does not exist in current directory');
+// Check a directory and list files
+function checkDir(dirPath, level = 0, maxLevel = 2) {
+  if (level > maxLevel) return; // Limit recursion
+  
+  try {
+    const items = fs.readdirSync(dirPath);
+    console.log(`${' '.repeat(level * 2)}📁 ${path.basename(dirPath)} (${items.length} items)`);
     
-    // Try to find package.json in parent directories
-    console.log('\nSearching for package.json in parent directories:');
-    let currentDir = process.cwd();
-    let found = false;
-    
-    for (let i = 0; i < 5; i++) { // Look up to 5 levels up
-      currentDir = path.dirname(currentDir);
-      console.log(`Checking ${currentDir}`);
+    // List all items in the directory
+    for (const item of items) {
+      const itemPath = path.join(dirPath, item);
+      const stats = fs.statSync(itemPath);
       
-      if (fs.existsSync(path.join(currentDir, 'package.json'))) {
-        console.log(`Found package.json in ${currentDir}`);
-        const packageContent = fs.readFileSync(path.join(currentDir, 'package.json'), 'utf8');
-        console.log(packageContent);
-        found = true;
-        break;
+      if (stats.isDirectory()) {
+        checkDir(itemPath, level + 1, maxLevel);
+      } else {
+        console.log(`${' '.repeat((level + 1) * 2)}📄 ${item} (${Math.round(stats.size / 1024)} KB)`);
       }
     }
-    
-    if (!found) {
-      console.log('Could not find package.json in any parent directory up to 5 levels');
-    }
+  } catch (e) {
+    console.log(`${' '.repeat(level * 2)}❌ Error reading directory ${dirPath}: ${e.message}`);
   }
-} catch (err) {
-  console.error('Error reading package.json:', err);
 }
 
-console.log('\n=== END DEBUG INFO ==='); 
+// Run the diagnostics
+getSystemInfo(); 

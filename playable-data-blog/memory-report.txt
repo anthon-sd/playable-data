@@ -1,0 +1,34 @@
+Memory Report - 2025-02-28T16:52:57.569Z
+
+Current working directory: C:\Users\antho\OneDrive\Documents\GitHub\playable-data\playable-data-blog
+NODE.JS MEMORY USAGE:
+RSS: 28 MB
+Heap Total: 6 MB
+Heap Used: 5 MB
+External: 2 MB
+
+SYSTEM MEMORY INFO (Windows):
+
+
+FreePhysicalMemory=4675164
+
+
+
+
+
+Detected free memory: 4566 MB
+Memory check passed: 4566 MB available (1536 MB required)
+Could not check disk space
+
+Package.json found
+Available build scripts:
+"dev": "astro dev",
+    "start": "astro dev",
+    "prebuild": "node memory-monitor.js",
+    "build": "NODE_OPTIONS='--max-old-space-size=2048' astro build --silent",
+    "preview": "astro preview",
+    "astro": "astro",
+    "debug": "node netlify-debug.js",
+    "postinstall": "echo 'Postinstall completed successfully'",
+    "minimal-build": "NODE_OPTIONS='--max-old-space-size=1536' astro build --silent",
+    "netlify": "node memory-monitor.js && node netlify-bootstrap.js"

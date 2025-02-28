@@ -7,9 +7,14 @@
  * It can be run as a pre-build step to ensure enough memory is available.
  */
 
-const { execSync } = require('child_process');
-const fs = require('fs');
-const path = require('path');
+import { execSync } from 'child_process';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+// ES Module equivalent of __dirname
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Configuration
 const MIN_MEMORY_REQUIRED_MB = 1536; // Minimum required free memory in MB
