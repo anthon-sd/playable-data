@@ -1,0 +1,14 @@
+fix: implement ultra-minimal build strategy & fix directory structure
+
+Resolves two critical Netlify deployment issues:
+1. Memory issues (exit code 137) by implementing a comprehensive memory optimization strategy
+2. Directory structure errors by fixing incorrect path references
+
+Key changes:
+- Removed nested directory references in netlify.toml
+- Updated bootstrap script with correct paths & enhanced memory management
+- Created memory monitoring tool with improved diagnostics
+- Simplified Astro configuration to minimize memory usage
+- Updated documentation with correct repository structure
+
+These changes ensure successful deployment even in memory-constrained environments. 

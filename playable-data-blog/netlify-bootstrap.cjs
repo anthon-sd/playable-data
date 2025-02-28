@@ -15,13 +15,9 @@ const currentDir = process.cwd();
 console.log('Current directory:', currentDir);
 
 // Determine critical paths
-const REPO_DIR = '/opt/build/repo';
-const BASE_DIR = 'playable-data-blog';
-const BUILD_DIR = path.join(REPO_DIR, BASE_DIR);
+const BUILD_DIR = currentDir;
 const DIST_DIR = path.join(BUILD_DIR, 'dist');
 
-console.log('Repository directory:', REPO_DIR);
-console.log('Base directory:', BASE_DIR);
 console.log('Build directory:', BUILD_DIR);
 console.log('Dist directory:', DIST_DIR);
 
@@ -46,9 +42,8 @@ function createFallbackContent() {
 
 // MAIN EXECUTION
 try {
-  // Step 1: Ensure we're in the correct directory
-  process.chdir(BUILD_DIR);
-  console.log(`Changed directory to: ${process.cwd()}`);
+  // Log working directory for debugging
+  console.log(`Working in directory: ${process.cwd()}`);
   
   // Create the minimal Astro config to optimize memory
   const minimalAstroConfig = `

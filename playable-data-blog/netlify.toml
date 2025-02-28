@@ -1,7 +1,6 @@
 [build]
-  base = "playable-data-blog"
-  publish = "playable-data-blog/dist"
-  command = "cd playable-data-blog && node memory-monitor.js && node netlify-bootstrap.cjs"
+  publish = "dist"
+  command = "node memory-monitor.js && node netlify-bootstrap.cjs"
   
 [build.environment]
   NODE_VERSION = "16"
@@ -12,7 +11,7 @@
   
 # Fallback build approach if the main build fails
 [context.deploy-fallback]
-  command = "cd playable-data-blog && npm run minimal-build"
+  command = "npm run minimal-build"
 
 # Redirect to handle SPA routing
 [[redirects]]

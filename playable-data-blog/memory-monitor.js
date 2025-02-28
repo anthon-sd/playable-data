@@ -9,6 +9,7 @@
 
 const { execSync } = require('child_process');
 const fs = require('fs');
+const path = require('path');
 
 // Configuration
 const MIN_MEMORY_REQUIRED_MB = 1536; // Minimum required free memory in MB
@@ -17,6 +18,16 @@ const MEMORY_REPORT_FILE = './memory-report.txt';
 console.log('=== MEMORY MONITOR FOR NETLIFY BUILD ===');
 console.log('Node version:', process.version);
 
+// Check current directory structure
+console.log('Current working directory:', process.cwd());
+try {
+  console.log('Directory contents:');
+  const dirContents = fs.readdirSync(process.cwd());
+  console.log(dirContents.join(', '));
+} catch (err) {
+  console.error('Error reading directory:', err.message);
+}
+
 // Write memory report
 const writeReport = (content) => {
   fs.appendFileSync(MEMORY_REPORT_FILE, content + '\n');
@@ -24,6 +35,7 @@ const writeReport = (content) => {
 
 // Initialize report file
 fs.writeFileSync(MEMORY_REPORT_FILE, `Memory Report - ${new Date().toISOString()}\n\n`);
+writeReport(`Current working directory: ${process.cwd()}`);
 
 // Report Node.js memory usage
 const nodeMemory = process.memoryUsage();
@@ -147,6 +159,30 @@ try {
 } catch (e) {
   console.log('Could not check disk space');
   writeReport('Could not check disk space');
+}
+
+// Check package.json exists
+try {
+  if (fs.existsSync('package.json')) {
+    console.log('\nPackage.json found');
+    writeReport('\nPackage.json found');
+    
+    // Simple output of build scripts (without parsing full file to save memory)
+    const pkgContent = fs.readFileSync('package.json', 'utf8');
+    const scriptMatch = pkgContent.match(/"scripts"\s*:\s*{([^}]*)}/);
+    if (scriptMatch && scriptMatch[1]) {
+      console.log('Available build scripts:');
+      writeReport('Available build scripts:');
+      console.log(scriptMatch[1].trim());
+      writeReport(scriptMatch[1].trim());
+    }
+  } else {
+    console.log('\nPackage.json NOT found');
+    writeReport('\nPackage.json NOT found');
+  }
+} catch (e) {
+  console.error('Error checking package.json:', e.message);
+  writeReport(`Error checking package.json: ${e.message}`);
 }
 
 console.log('\nMemory report written to:', MEMORY_REPORT_FILE);
