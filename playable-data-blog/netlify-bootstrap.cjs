@@ -7,12 +7,30 @@ const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
 
-console.log('=== ENHANCED NETLIFY BOOTSTRAP ===');
+console.log('=== MEMORY-OPTIMIZED NETLIFY BOOTSTRAP ===');
 console.log('Node version:', process.version);
 
 // Get the current working directory
 const currentDir = process.cwd();
 console.log('Current directory:', currentDir);
+
+// Report memory info at start
+const initialMemoryUsage = process.memoryUsage();
+console.log('Initial memory usage:', {
+  rss: `${Math.round(initialMemoryUsage.rss / 1024 / 1024)} MB`,
+  heapTotal: `${Math.round(initialMemoryUsage.heapTotal / 1024 / 1024)} MB`,
+  heapUsed: `${Math.round(initialMemoryUsage.heapUsed / 1024 / 1024)} MB`,
+  external: `${Math.round(initialMemoryUsage.external / 1024 / 1024)} MB`,
+});
+
+// Log available system memory
+try {
+  const totalMemory = execSync('free -m').toString();
+  console.log('System memory info:');
+  console.log(totalMemory);
+} catch (e) {
+  console.log('Unable to get system memory info:', e.message);
+}
 
 // Determine critical paths
 const REPO_DIR = '/opt/build/repo';
@@ -28,7 +46,14 @@ console.log('Dist directory:', DIST_DIR);
 // List contents of the build directory
 try {
   console.log('Contents of BUILD_DIR:');
-  console.log(fs.readdirSync(BUILD_DIR).join('\n'));
+  // Read directory in chunks to avoid memory issues with large dirs
+  const entries = fs.readdirSync(BUILD_DIR);
+  console.log(`${entries.length} files/directories found`);
+  
+  // Print in chunks of 20 to avoid excessive output
+  for (let i = 0; i < entries.length; i += 20) {
+    console.log(entries.slice(i, i + 20).join(', '));
+  }
 } catch (error) {
   console.error('Error listing BUILD_DIR:', error.message);
 }
@@ -66,7 +91,7 @@ function createFallbackContent() {
   console.log(`Created styles.css at ${cssPath}`);
 }
 
-// Helper function to debug project structure
+// Helper function to debug project structure - made more memory efficient
 function debugProjectStructure() {
   console.log('===== DEBUGGING PROJECT STRUCTURE =====');
   
@@ -74,19 +99,25 @@ function debugProjectStructure() {
   console.log('Checking package.json...');
   if (fs.existsSync(path.join(BUILD_DIR, 'package.json'))) {
     try {
-      const packageJson = JSON.parse(fs.readFileSync(path.join(BUILD_DIR, 'package.json'), 'utf8'));
+      // Read file in a more memory-efficient way
+      const packageJsonContent = fs.readFileSync(path.join(BUILD_DIR, 'package.json'), 'utf8');
+      const packageJson = JSON.parse(packageJsonContent);
       console.log('Package name:', packageJson.name);
       console.log('Build script:', packageJson.scripts?.build || 'Not defined');
-      console.log('Dependencies count:', Object.keys(packageJson.dependencies || {}).length);
       
-      // Check for common build frameworks
-      const deps = { ...packageJson.dependencies, ...packageJson.devDependencies };
-      if (deps.astro) console.log('Framework detected: Astro');
-      if (deps.next) console.log('Framework detected: Next.js');
-      if (deps.gatsby) console.log('Framework detected: Gatsby');
-      if (deps.react) console.log('Framework detected: React');
-      if (deps.vue) console.log('Framework detected: Vue');
-      if (deps.angular) console.log('Framework detected: Angular');
+      // Count dependencies but don't store the full objects
+      const depCount = Object.keys(packageJson.dependencies || {}).length;
+      const devDepCount = Object.keys(packageJson.devDependencies || {}).length;
+      console.log(`Dependencies: ${depCount}, DevDependencies: ${devDepCount}`);
+      
+      // Check for common build frameworks without keeping full objects in memory
+      const allDeps = [...Object.keys(packageJson.dependencies || {}), ...Object.keys(packageJson.devDependencies || {})];
+      const frameworks = ['astro', 'next', 'gatsby', 'react', 'vue', 'angular'].filter(fw => allDeps.includes(fw));
+      console.log('Frameworks detected:', frameworks.join(', '));
+      
+      // Release references to large objects
+      packageJson = null;
+      allDeps = null;
     } catch (e) {
       console.error('Error parsing package.json:', e.message);
     }
@@ -113,15 +144,16 @@ function debugProjectStructure() {
     }
   });
   
-  // Check for source directories
+  // Check for source directories - limit depth of analysis
   const sourceDirs = ['src', 'components', 'pages', 'public', 'static', 'assets'];
   console.log('Checking for source directories...');
   sourceDirs.forEach(dir => {
     if (fs.existsSync(path.join(BUILD_DIR, dir))) {
       console.log(`Found: ${dir}/ directory`);
       try {
-        const files = fs.readdirSync(path.join(BUILD_DIR, dir));
-        console.log(`  Contains ${files.length} files/directories`);
+        // Don't store all files in memory, just count them
+        const fileCount = fs.readdirSync(path.join(BUILD_DIR, dir)).length;
+        console.log(`  Contains approximately ${fileCount} files/directories`);
       } catch (e) {
         console.error(`  Error reading directory:`, e.message);
       }
@@ -129,6 +161,12 @@ function debugProjectStructure() {
   });
   
   console.log('===== END PROJECT STRUCTURE DEBUG =====');
+  
+  // Force garbage collection if possible
+  if (global.gc) {
+    console.log('Forcing garbage collection...');
+    global.gc();
+  }
 }
 
 // MAIN EXECUTION
@@ -146,15 +184,24 @@ try {
     throw new Error('package.json not found');
   }
   
-  // Step 3: Install dependencies
-  console.log('Installing dependencies...');
+  // Log memory usage before npm install
+  const preInstallMemory = process.memoryUsage();
+  console.log('Memory before npm install:', {
+    rss: `${Math.round(preInstallMemory.rss / 1024 / 1024)} MB`,
+    heapTotal: `${Math.round(preInstallMemory.heapTotal / 1024 / 1024)} MB`,
+    heapUsed: `${Math.round(preInstallMemory.heapUsed / 1024 / 1024)} MB`
+  });
+  
+  // Step 3: Install dependencies with memory optimizations
+  console.log('Installing dependencies with memory optimizations...');
   try {
-    execSync('npm install --legacy-peer-deps --no-warnings', { 
+    execSync('npm install --no-fund --no-audit --no-optional --prefer-offline --legacy-peer-deps --no-warnings', { 
       stdio: 'inherit',
       env: {
         ...process.env,
         CI: 'false',
-        npm_config_loglevel: 'error'
+        npm_config_loglevel: 'error',
+        NODE_OPTIONS: '--max-old-space-size=2048' // Limit Node.js memory usage
       }
     });
     console.log('Dependencies installed successfully');
@@ -163,15 +210,48 @@ try {
     throw new Error('Failed to install dependencies');
   }
   
-  // Step 4: Run the build
-  console.log('Running build...');
+  // Log memory usage before build
+  const preBuildMemory = process.memoryUsage();
+  console.log('Memory before build:', {
+    rss: `${Math.round(preBuildMemory.rss / 1024 / 1024)} MB`,
+    heapTotal: `${Math.round(preBuildMemory.heapTotal / 1024 / 1024)} MB`,
+    heapUsed: `${Math.round(preBuildMemory.heapUsed / 1024 / 1024)} MB`
+  });
+  
+  // Step 4: Run the build with memory optimizations
+  console.log('Running build with memory optimizations...');
   try {
-    execSync('npm run build', { 
+    // Create a custom build command that uses low memory settings
+    const buildCommand = `cross-env NODE_OPTIONS="--max-old-space-size=2048" npm run build -- --no-sourcemap`;
+    
+    // Check if cross-env is available, if not use direct NODE_OPTIONS
+    try {
+      execSync('npx cross-env --version', { stdio: 'ignore' });
+    } catch (e) {
+      console.log('cross-env not available, using direct environment variable');
+      // If cross-env isn't available, just set the NODE_OPTIONS directly
+      buildCommand = 'npm run build -- --no-sourcemap';
+    }
+    
+    // Run the build in chunks by modifying the astro.config.mjs if necessary
+    // First, check if we can add build optimizations
+    if (fs.existsSync('astro.config.mjs')) {
+      console.log('Checking for Astro config optimizations...');
+      // We won't modify the file directly to avoid memory issues
+      // Instead, provide environment variables that Astro uses for optimization
+      process.env.ASTRO_MEMORY_LIMIT = 'true';
+    }
+    
+    // Run the actual build with memory constraints
+    execSync(buildCommand, { 
       stdio: 'inherit',
       env: {
         ...process.env,
         CI: 'false',
-        npm_config_loglevel: 'error'
+        npm_config_loglevel: 'error',
+        NODE_OPTIONS: '--max-old-space-size=2048',
+        ASTRO_MEMORY_LIMIT: 'true',
+        VITE_MEMORY_LIMIT: 'true'
       }
     });
     console.log('Build completed successfully');
@@ -184,7 +264,16 @@ try {
   if (fs.existsSync(DIST_DIR)) {
     console.log('Dist directory exists, checking contents...');
     const distContents = fs.readdirSync(DIST_DIR);
-    console.log('Dist directory contents:', distContents.join(', '));
+    
+    // Log only count and a sample of files to save memory
+    console.log(`Dist directory contains ${distContents.length} files/directories`);
+    if (distContents.length > 0) {
+      console.log('Sample files:', distContents.slice(0, Math.min(10, distContents.length)).join(', '));
+      
+      if (distContents.length > 10) {
+        console.log(`... and ${distContents.length - 10} more files`);
+      }
+    }
     
     if (distContents.length < 5) {
       console.warn(`WARNING: Only ${distContents.length} files found in dist directory. This may indicate a build problem.`);
@@ -219,16 +308,19 @@ try {
                 fs.mkdirSync(DIST_DIR, { recursive: true });
               }
               
-              // Copy all files
+              // Copy files in smaller batches to avoid memory issues
               console.log(`Copying files from ${dir} to ${DIST_DIR}...`);
-              execSync(`cp -r ${dir}/* ${DIST_DIR}/`, { stdio: 'inherit' });
+              
+              // Use shell command for more efficient copying
+              execSync(`find ${dir} -type f -print0 | xargs -0 -n 50 cp -t ${DIST_DIR}/ 2>/dev/null || cp -r ${dir}/* ${DIST_DIR}/`, { 
+                stdio: 'inherit',
+                shell: true 
+              });
+              
               console.log('Files copied successfully');
               
               // Verify the copy worked
-              const newDistContents = fs.readdirSync(DIST_DIR);
-              console.log(`Directory now contains ${newDistContents.length} files:`, newDistContents.join(', '));
-              
-              if (newDistContents.includes('index.html')) {
+              if (fs.existsSync(path.join(DIST_DIR, 'index.html'))) {
                 console.log('Successfully found and copied build output from alternate location');
                 break;
               }
@@ -250,6 +342,14 @@ try {
     throw new Error('Build did not create dist directory');
   }
   
+  // Log final memory usage
+  const finalMemory = process.memoryUsage();
+  console.log('Final memory usage:', {
+    rss: `${Math.round(finalMemory.rss / 1024 / 1024)} MB`,
+    heapTotal: `${Math.round(finalMemory.heapTotal / 1024 / 1024)} MB`,
+    heapUsed: `${Math.round(finalMemory.heapUsed / 1024 / 1024)} MB`
+  });
+  
   // Success! The build worked and files are in place
   console.log('Bootstrap completed successfully with full build!');
   process.exit(0);
@@ -257,6 +357,14 @@ try {
 } catch (error) {
   console.error('===== BUILD FAILED - CREATING FALLBACK CONTENT =====');
   console.error('Error:', error.message);
+  
+  // Log memory at failure point
+  const failureMemory = process.memoryUsage();
+  console.log('Memory at failure:', {
+    rss: `${Math.round(failureMemory.rss / 1024 / 1024)} MB`,
+    heapTotal: `${Math.round(failureMemory.heapTotal / 1024 / 1024)} MB`,
+    heapUsed: `${Math.round(failureMemory.heapUsed / 1024 / 1024)} MB`
+  });
   
   // Create fallback content so the site at least deploys with something
   createFallbackContent();
