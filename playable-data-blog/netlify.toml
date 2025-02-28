@@ -1,6 +1,7 @@
 [build]
   command = "node netlify-bootstrap.cjs"
   publish = "dist"
+  base = "playable-data-blog"
 
 [build.environment]
   # Node.js configuration

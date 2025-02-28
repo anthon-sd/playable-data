@@ -40,17 +40,21 @@ async function main() {
     const REPO_DIR = '/opt/build/repo';
     console.log('Repository directory:', REPO_DIR);
     
-    // CRITICAL FIX: Netlify already includes the base directory in their paths
-    // We should NOT append the base directory again to paths
-    const BUILD_DIR = REPO_DIR;
+    // Netlify is clearly using a base directory setting despite our changes
+    // We need to work with this setting rather than against it
+    const BASE_DIR = 'playable-data-blog';
+    console.log('Base directory setting (from Netlify UI):', BASE_DIR);
+    
+    // This is the directory where Netlify expects to run the build
+    const BUILD_DIR = path.join(REPO_DIR, BASE_DIR);
     console.log('Build directory:', BUILD_DIR);
     
-    // The expected output directory is directly in the repo
-    const EXPECTED_OUTPUT_DIR = path.join(REPO_DIR, 'dist');
+    // This is where Netlify expects to find the output
+    const EXPECTED_OUTPUT_DIR = path.join(BUILD_DIR, 'dist');
     console.log('Expected output directory:', EXPECTED_OUTPUT_DIR);
     
-    // This is the same as the expected output directory
-    const BUILD_OUTPUT_DIR = EXPECTED_OUTPUT_DIR;
+    // The build process might generate output here by default
+    const BUILD_OUTPUT_DIR = path.join(BUILD_DIR, 'dist');
     console.log('Build output directory:', BUILD_OUTPUT_DIR);
     
     // Create package.json
@@ -133,15 +137,33 @@ async function main() {
     if (fs.existsSync(BUILD_OUTPUT_DIR)) {
       console.log('Build output directory exists');
       
-      // Copy to expected location
-      if (!fs.existsSync(EXPECTED_OUTPUT_DIR)) {
-        fs.mkdirSync(EXPECTED_OUTPUT_DIR, { recursive: true });
+      // Copy to expected location if different
+      if (BUILD_OUTPUT_DIR !== EXPECTED_OUTPUT_DIR) {
+        // Ensure the expected output directory exists
+        if (!fs.existsSync(EXPECTED_OUTPUT_DIR)) {
+          fs.mkdirSync(EXPECTED_OUTPUT_DIR, { recursive: true });
+          console.log('Created expected output directory');
+        }
+        
+        // Copy files
+        execSync('cp -r ' + BUILD_OUTPUT_DIR + '/* ' + EXPECTED_OUTPUT_DIR + '/', { stdio: 'inherit' });
+        console.log('Successfully copied build output to expected location');
+      } else {
+        console.log('Build output directory is already in the expected location');
       }
-      
-      execSync('cp -r ' + BUILD_OUTPUT_DIR + '/* ' + EXPECTED_OUTPUT_DIR + '/', { stdio: 'inherit' });
-      console.log('Successfully copied build output to expected location');
     } else {
       console.error('Build output directory not found:', BUILD_OUTPUT_DIR);
+      
+      // Emergency fallback - create the directory and a placeholder index.html
+      console.log('Creating emergency fallback content');
+      fs.mkdirSync(EXPECTED_OUTPUT_DIR, { recursive: true });
+      
+      // Create a simple placeholder index.html
+      const placeholderHtml = '<!DOCTYPE html>\n<html>\n<head>\n  <title>Playable Data - Build Error</title>\n  <style>\n    body { font-family: sans-serif; max-width: 800px; margin: 0 auto; padding: 2rem; }\n    .error { background: #f8d7da; padding: 1rem; border-radius: 0.25rem; }\n  </style>\n</head>\n<body>\n  <h1>Build Error</h1>\n  <div class="error">\n    <p>The site failed to build properly. Please check the Netlify logs for more information.</p>\n    <p>Build timestamp: ' + new Date().toISOString() + '</p>\n  </div>\n</body>\n</html>';
+      
+      fs.writeFileSync(path.join(EXPECTED_OUTPUT_DIR, 'index.html'), placeholderHtml);
+      console.log('Created fallback index.html');
+      
       return false;
     }
     
