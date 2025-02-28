@@ -49,6 +49,10 @@ console.log('Expected output directory:', EXPECTED_OUTPUT_DIR);
 const BUILD_OUTPUT_DIR = path.join(REPO_DIR, 'dist');
 console.log('Build output directory:', BUILD_OUTPUT_DIR);
 
+// Define the proper build directory (including base dir)
+const BUILD_DIR = path.join(REPO_DIR, NETLIFY_BASE_DIR);
+console.log('Build directory:', BUILD_DIR);
+
 // Determine if we're in a subdirectory or not
 const isInSubdir = currentDir.includes(NETLIFY_BASE_DIR) || 
                   fs.existsSync(path.join(currentDir, 'package.json'));
@@ -133,24 +137,24 @@ try {
 // Copy source files to the build directory if needed
 try {
   // Check if we need to copy src/ directory
-  if (fs.existsSync('src') && !fs.existsSync(path.join(REPO_DIR, 'src'))) {
+  if (fs.existsSync('src') && !fs.existsSync(path.join(BUILD_DIR, 'src'))) {
     console.log('Copying src directory to build location...');
-    fs.mkdirSync(path.join(REPO_DIR, 'src'), { recursive: true });
-    execSync(\`cp -r src/* \${path.join(REPO_DIR, 'src')}/\`, { stdio: 'inherit' });
+    fs.mkdirSync(path.join(BUILD_DIR, 'src'), { recursive: true });
+    execSync('cp -r src/* ' + path.join(BUILD_DIR, 'src') + '/', { stdio: 'inherit' });
   }
   
   // Check if we need to copy public/ directory
-  if (fs.existsSync('public') && !fs.existsSync(path.join(REPO_DIR, 'public'))) {
+  if (fs.existsSync('public') && !fs.existsSync(path.join(BUILD_DIR, 'public'))) {
     console.log('Copying public directory to build location...');
-    fs.mkdirSync(path.join(REPO_DIR, 'public'), { recursive: true });
-    execSync(\`cp -r public/* \${path.join(REPO_DIR, 'public')}/\`, { stdio: 'inherit' });
+    fs.mkdirSync(path.join(BUILD_DIR, 'public'), { recursive: true });
+    execSync('cp -r public/* ' + path.join(BUILD_DIR, 'public') + '/', { stdio: 'inherit' });
   }
   
   // Copy config files
   ['astro.config.mjs', 'tsconfig.json', 'tailwind.config.mjs'].forEach(file => {
-    if (fs.existsSync(file) && !fs.existsSync(path.join(REPO_DIR, file))) {
-      console.log(\`Copying \${file} to build location...\`);
-      fs.copyFileSync(file, path.join(REPO_DIR, file));
+    if (fs.existsSync(file) && !fs.existsSync(path.join(BUILD_DIR, file))) {
+      console.log('Copying ' + file + ' to build location...');
+      fs.copyFileSync(file, path.join(BUILD_DIR, file));
     }
   });
 } catch (error) {
@@ -159,7 +163,7 @@ try {
 
 // Install dependencies with explicit environment variables
 try {
-  console.log('Installing dependencies...');
+  console.log('Installing dependencies in build directory...');
   // Set environment variables to ensure compatibility
   const env = {
     ...process.env,
@@ -172,7 +176,7 @@ try {
     PATH: process.env.PATH
   };
   
-  execSync('cd ' + REPO_DIR + ' && npm install --legacy-peer-deps --no-warnings', { 
+  execSync('cd ' + BUILD_DIR + ' && npm install --legacy-peer-deps --no-warnings', { 
     stdio: 'inherit',
     env: env
   });
@@ -356,8 +360,22 @@ const createFallbackSite = (buildError = null) => {
 
 // Run the build
 try {
-  console.log('Running build...');
-  execSync('cd ' + REPO_DIR + ' && npm run build --no-warnings', { stdio: 'inherit' });
+  // Check if build directory exists
+  if (!fs.existsSync(BUILD_DIR)) {
+    console.error('Build directory does not exist: ' + BUILD_DIR);
+    console.log('Contents of REPO_DIR:', fs.readdirSync(REPO_DIR).join('\n'));
+    throw new Error('Build directory not found: ' + BUILD_DIR);
+  }
+  
+  // Check if package.json exists in build directory
+  if (!fs.existsSync(path.join(BUILD_DIR, 'package.json'))) {
+    console.error('package.json not found in build directory: ' + BUILD_DIR);
+    console.log('Creating package.json in build directory');
+    fs.writeFileSync(path.join(BUILD_DIR, 'package.json'), JSON.stringify(packageJson, null, 2));
+  }
+  
+  console.log('Running build from correct directory...');
+  execSync(\`cd \${BUILD_DIR} && npm run build --no-warnings\`, { stdio: 'inherit' });
   console.log('Build completed successfully');
   
   // Check if the build created dist directory in REPO_DIR
