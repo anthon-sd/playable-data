@@ -47,12 +47,12 @@ try {
       console.log('Updated package.json type to "module"');
     }
     
-    // Ensure build script includes diagnostics and fallback
-    if (!packageJson.scripts?.build?.includes('diagnose-build.js')) {
+    // Ensure build script is set to use the CJS bootstrap file
+    if (packageJson.scripts?.build !== 'node netlify-bootstrap.cjs') {
       packageJson.scripts = packageJson.scripts || {};
-      packageJson.scripts.build = 'node diagnose-build.js && astro build || node fallback-build.js';
+      packageJson.scripts.build = 'node netlify-bootstrap.cjs';
       updated = true;
-      console.log('Updated build script to include diagnostics and fallback');
+      console.log('Updated build script to use netlify-bootstrap.cjs');
     }
     
     if (updated) {
