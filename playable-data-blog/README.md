@@ -157,3 +157,63 @@ If the build is consistently failing, you can:
 ## Required Node Version
 
 Node 18 or higher is required for this project.
+
+## Deployment Guide
+
+### Memory Optimization for Netlify Deployment
+
+This repository includes several memory optimization techniques to ensure successful deployment on Netlify's limited memory environment.
+
+#### Key Optimization Components
+
+1. **Memory Monitor Script (`memory-monitor.js`)**
+   - Runs before the build to check available system memory
+   - Automatically adjusts build settings based on available memory
+   - Creates detailed memory reports for diagnostics
+
+2. **Ultra-Minimal Bootstrap Script (`netlify-bootstrap.cjs`)**
+   - Replaces the standard build process with a memory-optimized version
+   - Uses process spawning instead of direct execution for better memory control
+   - Implements staged build attempts with progressively simpler approaches
+   - Creates fallback content if all build approaches fail
+
+3. **Optimized Astro Configuration**
+   - Disables memory-intensive features (sourcemaps, minification)
+   - Simplifies the build process for memory efficiency
+   - Avoids dependency optimization to reduce memory pressure
+
+### Deployment Instructions
+
+1. **Local Testing**
+   ```bash
+   # Test the memory-optimized build locally
+   npm run minimal-build
+   
+   # Test the Netlify deployment process locally
+   npm run netlify
+   ```
+
+2. **Netlify Configuration**
+   - Use Node.js 16.x or 18.x for deployment
+   - Set the publish directory to `dist`
+   - Set the build command to `npm run netlify`
+   - Add the following environment variables:
+     - `NODE_OPTIONS`: `--max-old-space-size=2048`
+     - `ASTRO_MEMORY_LIMIT`: `true`
+     - `VITE_MEMORY_LIMIT`: `true`
+
+### Troubleshooting
+
+If deployment continues to fail with memory issues:
+
+1. **Try the minimal build directly**
+   - Change the Netlify build command to `npm run minimal-build`
+
+2. **Disable non-essential integrations**
+   - Temporarily comment out unused integrations in `astro.config.mjs`
+
+3. **Check memory reports**
+   - Review `memory-report.txt` from previous builds for insights
+
+4. **Consider static export**
+   - As a last resort, build locally and deploy the static output
