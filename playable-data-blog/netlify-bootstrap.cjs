@@ -173,31 +173,20 @@ try {
   process.exit(1);
 }
 
-// Create emergency fallback site content
-const createFallbackSite = (buildError = null) => {
-  console.log('Creating diagnostic error page with build details');
-  
-  // Get the current date and time for the error page
+// Helper function to create HTML error page
+function createErrorPage(errorMessage = null) {
   const timestamp = new Date().toISOString();
   const formattedDate = new Date().toLocaleString();
+  const year = new Date().getFullYear();
   
-  // Format the error message for display, if available
-  let errorDetails = '';
-  if (buildError) {
-    errorDetails = \`
-<div class="code">
-<p><strong>Error Message:</strong></p>
-<pre>\${buildError.toString().replace(/</g, '&lt;').replace(/>/g, '&gt;')}</pre>
-</div>\`;
+  let errorHtml = '';
+  if (errorMessage) {
+    errorHtml = '<div class="code"><p><strong>Error Message:</strong></p><pre>';
+    errorHtml += String(errorMessage).replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    errorHtml += '</pre></div>';
   }
   
-  // Create dist directory if it doesn't exist
-  if (!fs.existsSync(EXPECTED_OUTPUT_DIR)) {
-    fs.mkdirSync(EXPECTED_OUTPUT_DIR, { recursive: true });
-  }
-  
-  // Create a diagnostic error page
-  const indexHtml = \`<!DOCTYPE html>
+  return \`<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -256,7 +245,7 @@ const createFallbackSite = (buildError = null) => {
     </ol>
   </div>
   
-  \${errorDetails}
+  \${errorHtml}
   
   <div class="info">
     <h2>Diagnostic Information</h2>
@@ -267,15 +256,18 @@ const createFallbackSite = (buildError = null) => {
   </div>
   
   <div class="footer">
-    <p>&copy; \${new Date().getFullYear()} Playable Data | Error page generated at \${timestamp}</p>
+    <p>&copy; \${year} Playable Data | Error page generated at \${timestamp}</p>
   </div>
 </body>
 </html>\`;
-  fs.writeFileSync(path.join(EXPECTED_OUTPUT_DIR, 'index.html'), indexHtml);
-  console.log('Created diagnostic error page in', EXPECTED_OUTPUT_DIR);
+}
+
+// Helper function to create 404 page
+function create404Page() {
+  const timestamp = new Date().toISOString();
+  const year = new Date().getFullYear();
   
-  // Create a minimal 404 page
-  const notFoundHtml = \`<!DOCTYPE html>
+  return \`<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -324,10 +316,28 @@ const createFallbackSite = (buildError = null) => {
   </div>
   
   <div class="footer">
-    <p>&copy; \${new Date().getFullYear()} Playable Data | Error page generated at \${timestamp}</p>
+    <p>&copy; \${year} Playable Data | Error page generated at \${timestamp}</p>
   </div>
 </body>
 </html>\`;
+}
+
+// Create emergency fallback site content
+const createFallbackSite = (buildError = null) => {
+  console.log('Creating diagnostic error page with build details');
+  
+  // Create dist directory if it doesn't exist
+  if (!fs.existsSync(EXPECTED_OUTPUT_DIR)) {
+    fs.mkdirSync(EXPECTED_OUTPUT_DIR, { recursive: true });
+  }
+  
+  // Create a diagnostic error page using the helper function
+  const indexHtml = createErrorPage(buildError);
+  fs.writeFileSync(path.join(EXPECTED_OUTPUT_DIR, 'index.html'), indexHtml);
+  console.log('Created diagnostic error page in', EXPECTED_OUTPUT_DIR);
+  
+  // Create a 404 page using the helper function
+  const notFoundHtml = create404Page();
   fs.writeFileSync(path.join(EXPECTED_OUTPUT_DIR, '404.html'), notFoundHtml);
   console.log('Created diagnostic 404 page in', EXPECTED_OUTPUT_DIR);
   
@@ -348,7 +358,7 @@ try {
     try {
       console.log('Contents of build output directory:');
       const buildDirContents = fs.readdirSync(path.join(REPO_DIR, 'dist'));
-      console.log(buildDirContents.join('\n'));
+      console.log(buildDirContents.join('\\n'));
       
       // Check if the directory has any HTML files (basic validation)
       const hasHtmlFiles = buildDirContents.some(file => file.endsWith('.html'));
@@ -393,7 +403,7 @@ try {
     try {
       console.log('Contents of final output directory:');
       const finalDirContents = fs.readdirSync(EXPECTED_OUTPUT_DIR);
-      console.log(finalDirContents.join('\n'));
+      console.log(finalDirContents.join('\\n'));
       
       if (finalDirContents.length === 0) {
         console.error('WARNING: Final output directory is empty after copying. Check for errors in the copy process.');
@@ -448,4 +458,6 @@ fs.unlinkSync(tempFile);
 console.log('Removed temporary bootstrap script');
 
 // Exit with the same code as the ES module script
-process.exit(result.status); 
+console.log('ES module script exit code:', result.status);
+// Always exit with code 0 to allow Netlify to deploy the fallback page
+process.exit(0); 

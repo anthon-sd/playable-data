@@ -13,7 +13,8 @@ export default defineConfig({
   output: 'static',
   trailingSlash: 'always',
   build: {
-    format: 'directory'
+    format: 'directory',
+    assets: 'assets' // Ensures assets are placed in the assets directory
   },
   vite: {
     build: {
@@ -23,7 +24,13 @@ export default defineConfig({
       terserOptions: {
         compress: {
           drop_console: false, // Keep console logs for debugging
-          drop_debugger: true
+          drop_debugger: true,
+          ecma: 2020,
+          passes: 2
+        },
+        format: {
+          comments: false,
+          ecma: 2020
         }
       },
       rollupOptions: {
@@ -34,7 +41,11 @@ export default defineConfig({
               'marked',
               'slugify'
             ]
-          }
+          },
+          // Add hash to chunk filenames for better caching
+          chunkFileNames: 'assets/js/[name].[hash].js',
+          entryFileNames: 'assets/js/[name].[hash].js',
+          assetFileNames: 'assets/[ext]/[name].[hash].[ext]'
         }
       }
     },

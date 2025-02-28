@@ -1,0 +1,16 @@
+#!/bin/sh
+. "$(dirname "$0")/_/husky.sh"
+
+# Check for any unwanted Vercel references
+if grep -r --include="*.js" --include="*.json" --include="*.md" -i "vercel" --exclude-dir=".git" --exclude-dir="node_modules" .; then
+  echo "Error: Found references to Vercel in the codebase. Please remove these before committing."
+  exit 1
+fi
+
+# Ensure proper environment files exist
+if [ ! -f .env.production ]; then
+  echo "Error: .env.production file is missing. Please create it before committing."
+  exit 1
+fi
+
+echo "Pre-commit checks passed!" 
