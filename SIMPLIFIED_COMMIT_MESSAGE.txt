@@ -1,0 +1,19 @@
+refactor: simplify build process and prepare for headless CMS migration
+
+Based on professional feedback, this commit simplifies the project
+structure and build process to address fundamental architectural issues:
+
+- Removed complex script-based build process in favor of standard Astro build
+- Simplified netlify.toml with cleaner configuration and proper security headers
+- Updated package.json to use standard build commands
+- Simplified astro.config.mjs to remove unnecessary complexity
+- Updated README.md with clearer deployment instructions 
+- Added CLEANUP_RECOMMENDATIONS.md with steps to further improve the project
+
+This is the first step toward a cleaner architecture. Next steps include:
+1. Moving to a flatter directory structure
+2. Migrating from Supabase to a headless CMS for content management
+3. Addressing potential security issues in the codebase
+
+These changes should result in a more maintainable codebase and more
+reliable deployment process. 

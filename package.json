@@ -6,14 +6,9 @@
   "scripts": {
     "dev": "astro dev",
     "start": "astro dev",
-    "prebuild": "node memory-monitor.js",
-    "build": "NODE_OPTIONS='--max-old-space-size=2048' astro build --silent",
+    "build": "astro build",
     "preview": "astro preview",
-    "astro": "astro",
-    "debug": "node netlify-debug.js",
-    "postinstall": "echo 'Postinstall completed successfully'",
-    "minimal-build": "NODE_OPTIONS='--max-old-space-size=1536' astro build --silent",
-    "netlify": "node memory-monitor.js && node netlify-bootstrap.js"
+    "astro": "astro"
   },
   "dependencies": {
     "@astrojs/mdx": "^1.1.5",
