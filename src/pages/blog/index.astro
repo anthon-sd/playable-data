@@ -1,0 +1,108 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { formatDate } from '../../utils/date';
+import FeaturedPost from '../../components/FeaturedPost.astro';
+import BlogCard from '../../components/BlogCard.astro';
+import NewsletterSignup from '../../components/NewsletterSignup.astro';
+
+// Static example data for demonstration
+const allPosts = [
+  {
+    id: '1',
+    title: 'Getting Started with Data Analysis',
+    slug: 'getting-started-with-data-analysis',
+    content: '# Getting Started with Data Analysis\n\nThis is a guide to get you started with data analysis...',
+    excerpt: 'A beginner-friendly guide to data analysis',
+    author_name: 'Example Author',
+    status: 'published',
+    category: 'Tutorials',
+    tags: ['data-analysis', 'beginners'],
+    featured_image: '/placeholder-image.jpg',
+    created_at: '2023-01-01T12:00:00Z',
+    updated_at: '2023-01-01T12:00:00Z',
+    featured: true
+  },
+  {
+    id: '2',
+    title: 'Advanced Visualization Techniques',
+    slug: 'advanced-visualization-techniques',
+    content: '# Advanced Visualization Techniques\n\nTake your data visualization to the next level...',
+    excerpt: 'Master complex data visualization methods',
+    author_name: 'Example Author',
+    status: 'published',
+    category: 'Advanced',
+    tags: ['data-visualization', 'advanced'],
+    featured_image: '/placeholder-image.jpg',
+    created_at: '2023-01-02T12:00:00Z',
+    updated_at: '2023-01-02T12:00:00Z'
+  },
+  {
+    id: '3',
+    title: 'Understanding Gaming Analytics',
+    slug: 'understanding-gaming-analytics',
+    content: '# Understanding Gaming Analytics\n\nHow to use data to improve gaming experiences...',
+    excerpt: 'Using data to enhance player engagement',
+    author_name: 'Example Author',
+    status: 'published',
+    category: 'Gaming',
+    tags: ['gaming', 'data-analysis', 'analytics'],
+    featured_image: '/placeholder-image.jpg',
+    created_at: '2023-01-03T12:00:00Z',
+    updated_at: '2023-01-03T12:00:00Z'
+  }
+];
+
+// Sort posts by date
+const sortedPosts = [...allPosts].sort((a, b) => new Date(b.created_at).valueOf() - new Date(a.created_at).valueOf());
+
+// Get unique tags
+const allTags = [...new Set(allPosts.flatMap(post => post.tags || []))].sort();
+---
+
+<Layout title="Blog - Playable Data">
+  <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <header class="mb-12">
+      <h1 class="text-4xl font-bold mb-4">Blog</h1>
+      <p class="text-xl text-gray-600">Latest articles, tutorials, and insights</p>
+    </header>
+
+    <!-- Filter by tag -->
+    <div class="mb-8">
+      <h2 class="text-lg font-medium mb-3">Browse by Topic</h2>
+      <div class="flex flex-wrap gap-2">
+        {allTags.map(tag => (
+          <a 
+            href={`/topics/${tag}`} 
+            class="inline-block px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded-full text-sm text-gray-700 transition"
+          >
+            {tag}
+          </a>
+        ))}
+      </div>
+    </div>
+
+    <!-- Articles list -->
+    <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+      {sortedPosts.map(post => (
+        <BlogCard 
+          title={post.title}
+          description={post.excerpt}
+          href={`/blog/${post.slug}`}
+          date={post.created_at}
+          image={post.featured_image}
+          author={{
+            name: post.author_name
+          }}
+          tags={post.tags || []}
+        />
+      ))}
+    </div>
+  </div>
+
+  <!-- Newsletter -->
+  <section class="bg-blue-50 py-12">
+    <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+      <NewsletterSignup />
+    </div>
+  </section>
+</Layout>

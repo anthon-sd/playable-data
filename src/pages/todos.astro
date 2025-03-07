@@ -1,0 +1,47 @@
+---
+import Layout from '../layouts/Layout.astro';
+// Sample todos data since we removed Supabase
+const todos = [
+  { id: 1, title: 'Build prototype', completed: true },
+  { id: 2, title: 'Create mockups', completed: true },
+  { id: 3, title: 'Implement UI', completed: false },
+  { id: 4, title: 'Connect API', completed: false },
+  { id: 5, title: 'Test application', completed: false }
+];
+---
+
+<Layout title="Todos">
+  <section class="max-w-4xl mx-auto p-4">
+    <div class="mb-8">
+      <h1 class="text-3xl font-bold mb-4">Project Todos</h1>
+      <p class="text-gray-600">Track your project tasks and progress</p>
+    </div>
+
+    <div class="bg-white shadow-md rounded-lg overflow-hidden">
+      <div class="p-4 border-b border-gray-200 bg-gray-50">
+        <h2 class="text-xl font-semibold">Task List</h2>
+      </div>
+      
+      <ul class="divide-y divide-gray-200">
+        {todos.length > 0 ? (
+          todos.map(todo => (
+            <li class="p-4 flex items-center hover:bg-gray-50">
+              <input 
+                type="checkbox" 
+                checked={todo.completed}
+                class="mr-4 h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+              />
+              <span class={todo.completed ? "line-through text-gray-400" : "text-gray-700"}>
+                {todo.title}
+              </span>
+            </li>
+          ))
+        ) : (
+          <li class="p-6 text-center">
+            <p class="text-gray-500">No todos found. Create some using the API!</p>
+          </li>
+        )}
+      </ul>
+    </div>
+  </section>
+</Layout>

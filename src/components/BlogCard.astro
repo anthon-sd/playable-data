@@ -1,0 +1,59 @@
+---
+import { formatDate } from '../utils/date';
+
+// Accept direct props instead of post object
+const { 
+  title, 
+  description, 
+  href, 
+  date, 
+  image, 
+  author, 
+  tags 
+} = Astro.props;
+---
+
+<article class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
+  {image && (
+    <a href={href} class="block overflow-hidden h-48">
+      <img 
+        src={image} 
+        alt={`Cover image for ${title}`} 
+        class="w-full h-full object-cover transition-transform hover:scale-105"
+      />
+    </a>
+  )}
+  
+  <div class="p-6">
+    {tags && tags.length > 0 && (
+      <div class="flex flex-wrap gap-2 mb-3">
+        {tags.slice(0, 3).map((tag: string) => (
+          <a href={`/topics/${tag}`} class="text-xs bg-gray-100 hover:bg-gray-200 text-gray-800 px-2 py-1 rounded-full transition">
+            {tag}
+          </a>
+        ))}
+        {tags.length > 3 && <span class="text-xs text-gray-500">+{tags.length - 3} more</span>}
+      </div>
+    )}
+    
+    <h2 class="text-xl font-bold mb-2 text-gray-900 line-clamp-2">
+      <a href={href} class="hover:text-blue-600 transition">
+        {title}
+      </a>
+    </h2>
+    
+    {description && (
+      <p class="text-gray-600 mb-4 line-clamp-3">{description}</p>
+    )}
+    
+    <div class="flex items-center justify-between text-sm text-gray-500">
+      <div class="flex items-center gap-2">
+        {author?.name && (
+          <span>{author.name}</span>
+        )}
+      </div>
+      
+      <time datetime={new Date(date).toISOString()}>{formatDate(new Date(date))}</time>
+    </div>
+  </div>
+</article>

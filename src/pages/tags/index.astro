@@ -1,0 +1,40 @@
+---
+import Layout from '../../layouts/Layout.astro';
+
+// Static example data with tags
+const allTags = [
+  'data-analysis',
+  'beginners', 
+  'data-visualization', 
+  'advanced', 
+  'gaming', 
+  'analytics', 
+  'machine-learning'
+];
+
+// Sort tags alphabetically
+const sortedTags = [...allTags].sort();
+---
+
+<Layout title="Browse by Tags">
+  <div class="max-w-4xl mx-auto px-4 py-8">
+    <header class="mb-8">
+      <h1 class="text-3xl font-bold mb-2">Tags</h1>
+      <p class="text-gray-600">Browse articles by tag</p>
+    </header>
+
+    <div class="bg-white rounded-lg shadow p-8">
+      <div class="flex flex-wrap gap-4">
+        {sortedTags.map(tag => (
+          <a 
+            href={`/tags/${tag}`}
+            class="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-full text-gray-800 transition-colors"
+          >
+            {tag}
+            <span class="ml-1 text-gray-500 text-sm">(5)</span>
+          </a>
+        ))}
+      </div>
+    </div>
+  </div>
+</Layout>

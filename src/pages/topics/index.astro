@@ -1,0 +1,40 @@
+---
+import Layout from '../../layouts/Layout.astro';
+
+// Static example data with topics
+const allTopics = [
+  'data-analysis',
+  'beginners', 
+  'data-visualization', 
+  'advanced', 
+  'gaming', 
+  'analytics', 
+  'machine-learning'
+];
+
+// Sort topics alphabetically
+const sortedTopics = [...allTopics].sort();
+---
+
+<Layout title="Browse by Topics">
+  <div class="max-w-4xl mx-auto px-4 py-8">
+    <header class="mb-8">
+      <h1 class="text-3xl font-bold mb-2">Topics</h1>
+      <p class="text-gray-600">Browse articles by topic</p>
+    </header>
+
+    <div class="bg-white rounded-lg shadow p-8">
+      <div class="flex flex-wrap gap-4">
+        {sortedTopics.map(topic => (
+          <a 
+            href={`/topics/${topic}`}
+            class="px-4 py-2 bg-green-100 hover:bg-green-200 rounded-full text-green-800 transition-colors"
+          >
+            {topic}
+            <span class="ml-1 text-green-700 text-sm">(5)</span>
+          </a>
+        ))}
+      </div>
+    </div>
+  </div>
+</Layout>

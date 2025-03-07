@@ -1,0 +1,121 @@
+---
+const navItems = [
+  { name: 'Blog', href: '/blog' },
+  { name: 'Topics', href: '/topics' }
+];
+
+const currentPath = Astro.url.pathname;
+const logoUrl = "/placeholder-image.jpg";
+---
+
+<header class="header">
+  <div class="container-custom">
+    <div class="flex justify-between h-32">
+      <div class="flex items-center">
+        <a href="/" class="flex-shrink-0 flex items-center">
+          <span class="text-xl font-bold text-blue-600">Playable Data</span>
+        </a>
+      </div>
+      
+      <div class="flex items-center">
+        <nav class="hidden md:flex items-center space-x-8">
+          {navItems.map(item => (
+            <a 
+              href={item.href} 
+              class={`nav-link ${
+                currentPath === item.href || (item.href !== '/' && currentPath.startsWith(item.href)) 
+                  ? 'nav-link-active' 
+                  : ''
+              } relative px-4 py-2 text-white hover:text-accent-lighter transition-all duration-300 group`}
+            >
+              <span class="relative z-10 flex items-center gap-1">
+                {item.name}
+              </span>
+              <span class={`absolute inset-0 bg-white/10 rounded-lg ${
+                currentPath === item.href || (item.href !== '/' && currentPath.startsWith(item.href))
+                  ? 'scale-100'
+                  : 'scale-0'
+              } group-hover:scale-100 transition-transform duration-300 ease-out origin-center`}></span>
+            </a>
+          ))}
+        </nav>
+        
+        <nav class="hidden md:flex items-center gap-4 ml-8">
+          <a 
+            href="https://discord.gg/m9YwpA2Xjd"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="relative px-4 py-2 text-white hover:text-accent-lighter transition-all duration-300 group"
+          >
+            <span class="relative z-10">Discord</span>
+            <span class="absolute inset-0 bg-white/10 rounded-lg scale-0 group-hover:scale-100 transition-transform duration-300 ease-out origin-center"></span>
+          </a>
+          <a 
+            href="https://swayvendigital.com/contact-us/"
+            target="_blank"
+            rel="noopener noreferrer" 
+            class="inline-flex items-center justify-center px-5 py-3 border border-transparent text-base font-medium rounded-md text-black bg-[#ffaa0c] hover:bg-opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#ffaa0c]"
+          >
+            Contact Us
+          </a>
+        </nav>
+        
+        <button class="md:hidden p-2 rounded-md text-white hover:text-accent-lighter hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white/20" id="mobile-menu-button">
+          <span class="sr-only">Open main menu</span>
+          <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+        </button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Mobile menu, show/hide based on menu state -->
+  <div class="hidden md:hidden" id="mobile-menu">
+    <div class="container-custom py-4">
+      {navItems.map(item => (
+        <a 
+          href={item.href} 
+          class={`block py-2 text-white hover:text-accent-lighter ${
+            currentPath === item.href || (item.href !== '/' && currentPath.startsWith(item.href)) 
+              ? 'bg-white/10 font-medium' 
+              : ''
+          }`}
+        >
+          {item.name}
+        </a>
+      ))}
+      <div class="mt-4 pt-4 border-t border-white/10">
+        <a 
+          href="https://discord.gg/m9YwpA2Xjd"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="block py-2 text-white hover:text-accent-lighter"
+        >
+          Discord
+        </a>
+        <a 
+          href="https://swayvendigital.com/contact-us/"
+          target="_blank"
+          rel="noopener noreferrer" 
+          class="block py-2 text-white hover:text-accent-lighter"
+        >
+          Contact Us
+        </a>
+      </div>
+    </div>
+  </div>
+</header>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const mobileMenuButton = document.getElementById('mobile-menu-button');
+    const mobileMenu = document.getElementById('mobile-menu');
+    
+    if (mobileMenuButton && mobileMenu) {
+      mobileMenuButton.addEventListener('click', () => {
+        mobileMenu.classList.toggle('hidden');
+      });
+    }
+  });
+</script>

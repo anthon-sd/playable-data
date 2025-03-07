@@ -1,0 +1,126 @@
+---
+import Layout from '../../layouts/Layout.astro';
+
+// Static example data for case studies
+const allCaseStudies = [
+  {
+    id: '1',
+    title: 'Analytics Platform for Gaming Company',
+    slug: 'analytics-platform-gaming',
+    content: '# Analytics Platform for Gaming Company\n\nThis case study demonstrates how we helped a gaming company improve their player analytics...',
+    excerpt: 'How we improved player engagement by 35% through data insights',
+    author_name: 'Case Study Team',
+    status: 'published',
+    client: 'Major Gaming Studio',
+    industry: 'Gaming',
+    technologies: ['Data Visualization', 'Python', 'React'],
+    tags: ['gaming', 'analytics', 'case-study'],
+    cover_image: '/placeholder-image.jpg',
+    created_at: '2023-01-05T12:00:00Z',
+    updated_at: '2023-01-10T12:00:00Z'
+  },
+  {
+    id: '2',
+    title: 'Data Pipeline Optimization',
+    slug: 'data-pipeline-optimization',
+    content: '# Data Pipeline Optimization\n\nOur team helped a financial services client optimize their data processing pipeline...',
+    excerpt: 'Reducing data processing time by 75% for financial services client',
+    author_name: 'Case Study Team',
+    status: 'published',
+    client: 'Financial Services Provider',
+    industry: 'Finance',
+    technologies: ['Apache Spark', 'AWS', 'Kafka'],
+    tags: ['finance', 'data-engineering', 'case-study'],
+    cover_image: '/placeholder-image.jpg',
+    created_at: '2023-02-15T12:00:00Z',
+    updated_at: '2023-02-20T12:00:00Z'
+  },
+  {
+    id: '3',
+    title: 'Machine Learning for Player Behavior',
+    slug: 'machine-learning-player-behavior',
+    content: '# Machine Learning for Player Behavior\n\nWe developed advanced ML models to predict player behavior and improve retention...',
+    excerpt: 'Using ML to predict player churn and improve retention by 25%',
+    author_name: 'Case Study Team',
+    status: 'published',
+    client: 'Mobile Game Developer',
+    industry: 'Gaming',
+    technologies: ['Machine Learning', 'Python', 'TensorFlow'],
+    tags: ['gaming', 'machine-learning', 'case-study'],
+    cover_image: '/placeholder-image.jpg',
+    created_at: '2023-03-10T12:00:00Z',
+    updated_at: '2023-03-15T12:00:00Z'
+  }
+];
+
+// Get unique industries for filtering
+const allIndustries = [...new Set(allCaseStudies.map(study => study.industry))];
+---
+
+<Layout title="Case Studies - Playable Data">
+  <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <header class="mb-12">
+      <h1 class="text-4xl font-bold mb-4">Case Studies</h1>
+      <p class="text-xl text-gray-600">Real-world examples of our data solutions in action</p>
+    </header>
+
+    <!-- Filter options -->
+    <div class="mb-8">
+      <h2 class="text-lg font-medium mb-3">Filter by Industry</h2>
+      <div class="flex flex-wrap gap-2">
+        <a href="/case-studies" class="inline-block px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">
+          All Industries
+        </a>
+        {allIndustries.map(industry => (
+          <a 
+            href={`/case-studies?industry=${industry}`} 
+            class="inline-block px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded-full text-sm text-gray-700 transition"
+          >
+            {industry}
+          </a>
+        ))}
+      </div>
+    </div>
+
+    <!-- Case studies list -->
+    <div class="grid gap-8">
+      {allCaseStudies.map((study) => (
+        <div class="bg-white shadow-md rounded-lg overflow-hidden flex flex-col md:flex-row">
+          {study.cover_image && (
+            <div class="md:w-1/3">
+              <img 
+                src={study.cover_image} 
+                alt={`Cover image for ${study.title}`} 
+                class="h-full w-full object-cover object-center"
+              />
+            </div>
+          )}
+          <div class="p-6 md:w-2/3">
+            <div class="flex items-center gap-2 mb-2">
+              <span class="text-xs font-medium bg-blue-100 text-blue-800 px-2 py-1 rounded-full">{study.industry}</span>
+              <span class="text-sm text-gray-500">Client: {study.client}</span>
+            </div>
+            <h2 class="text-2xl font-bold mb-2">{study.title}</h2>
+            <p class="text-gray-600 mb-4">{study.excerpt}</p>
+            <div class="mb-4">
+              <h3 class="text-sm font-medium text-gray-500 mb-1">Technologies</h3>
+              <div class="flex flex-wrap gap-1">
+                {study.technologies.map(tech => (
+                  <span class="text-xs bg-gray-100 text-gray-800 px-2 py-1 rounded">
+                    {tech}
+                  </span>
+                ))}
+              </div>
+            </div>
+            <a 
+              href={`/case-studies/${study.slug}`} 
+              class="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 transition"
+            >
+              Read Case Study
+            </a>
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+</Layout>

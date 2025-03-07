@@ -1,0 +1,74 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import BlogPost from '../../layouts/BlogPost.astro';
+import { marked } from 'marked';
+
+export async function getStaticPaths() {
+  // Static example data for demonstration
+  const articles = [
+    {
+      id: '1',
+      title: 'Getting Started with Data Analysis',
+      slug: 'getting-started-with-data-analysis',
+      content: '# Getting Started with Data Analysis\n\nThis is a guide to get you started with data analysis. Data analysis is the process of inspecting, cleansing, transforming, and modeling data with the goal of discovering useful information, informing conclusions, and supporting decision-making.\n\n## Why Data Analysis Matters\n\nIn today\'s data-driven world, the ability to analyze and interpret data is more important than ever. Companies across all industries are using data analysis to:\n\n- Improve business operations\n- Understand customer behavior\n- Make informed decisions\n- Identify trends and patterns\n- Predict future outcomes\n\n## Basic Steps in Data Analysis\n\n1. **Define your questions**: Start by clearly defining what you want to learn from your data.\n2. **Collect your data**: Gather relevant data from various sources.\n3. **Clean your data**: Remove errors, duplicates, and irrelevant information.\n4. **Analyze your data**: Apply statistical methods and tools to interpret your data.\n5. **Visualize your results**: Create charts, graphs, and other visualizations to communicate your findings.\n6. **Draw conclusions**: Based on your analysis, draw conclusions and make recommendations.\n\n## Tools for Data Analysis\n\nThere are many tools available for data analysis, ranging from spreadsheet applications to specialized programming languages. Some popular options include:\n\n- **Excel**: Good for basic data analysis and visualization\n- **Python**: Versatile programming language with powerful libraries like Pandas, NumPy, and Matplotlib\n- **R**: Programming language specifically designed for statistical analysis\n- **Tableau**: Data visualization software that helps create interactive dashboards\n- **Power BI**: Business analytics service by Microsoft\n\n## Getting Started\n\nIf you\'re new to data analysis, here are some steps to get started:\n\n1. Learn the basics of statistics and probability\n2. Familiarize yourself with a data analysis tool (Excel is a good starting point)\n3. Practice with real datasets (many free datasets are available online)\n4. Take online courses or tutorials to deepen your knowledge\n5. Work on projects that interest you to apply what you\'ve learned\n\nRemember, data analysis is a skill that improves with practice. Start with simple analyses and gradually tackle more complex problems as you gain experience.',
+      excerpt: 'A beginner-friendly guide to data analysis',
+      author_name: 'Example Author',
+      status: 'published',
+      category: 'Tutorials',
+      tags: ['data-analysis', 'beginners'],
+      featured_image: '/placeholder-image.jpg',
+      created_at: '2023-01-01T12:00:00Z',
+      updated_at: '2023-01-01T12:00:00Z',
+      featured: true
+    },
+    {
+      id: '2',
+      title: 'Advanced Visualization Techniques',
+      slug: 'advanced-visualization-techniques',
+      content: '# Advanced Visualization Techniques\n\nTake your data visualization to the next level with these advanced techniques. Effective data visualization is crucial for communicating complex information clearly and efficiently.\n\n## Beyond Basic Charts\n\nWhile basic charts like bar graphs and line charts are useful, advanced visualization techniques can provide deeper insights and more engaging presentations:\n\n### 1. Interactive Dashboards\n\nInteractive dashboards allow users to explore data dynamically by:\n- Filtering data based on specific criteria\n- Drilling down into details\n- Changing visualization parameters in real-time\n- Combining multiple visualizations in one view\n\n### 2. Geospatial Visualization\n\nMap-based visualizations help understand geographical patterns:\n- Choropleth maps (color-coded regions)\n- Heat maps showing data density\n- Point maps for specific locations\n- Flow maps for movement between locations\n\n### 3. Network Graphs\n\nNetwork graphs visualize relationships between entities:\n- Social network analysis\n- System dependencies\n- Organizational structures\n- Citation networks\n\n## Advanced Techniques\n\n### Data Animation\n\nAnimating data over time can reveal patterns that might be missed in static visualizations. This is particularly useful for:\n- Showing trends over time\n- Demonstrating cause and effect\n- Highlighting significant changes\n\n### 3D Visualization\n\nThree-dimensional visualizations can add an extra dimension to your data:\n- 3D scatter plots\n- Surface plots\n- Volume rendering\n\nHowever, use 3D with caution as it can sometimes make data harder to interpret accurately.\n\n### Augmented and Virtual Reality\n\nAR and VR are emerging as powerful tools for data visualization:\n- Immersive data exploration\n- Spatial data visualization\n- Collaborative data analysis\n\n## Tools for Advanced Visualization\n\nSeveral tools and libraries support advanced visualization techniques:\n\n- **D3.js**: A JavaScript library for creating custom, interactive visualizations\n- **Tableau**: Offers advanced visualization capabilities with relatively easy learning curve\n- **Python libraries**: Plotly, Bokeh, and Altair for interactive visualizations\n- **R packages**: ggplot2, plotly, and shiny for statistical visualization\n- **Power BI**: For business intelligence dashboards\n- **Specialized tools**: Gephi for network visualization, QGIS for geospatial data\n\n## Best Practices\n\nWhen creating advanced visualizations:\n\n1. **Start with the question**: What do you want your audience to understand?\n2. **Choose the right visualization**: Select the type that best represents your data\n3. **Minimize clutter**: Remove unnecessary elements that don\'t contribute to understanding\n4. **Use color effectively**: Color should enhance understanding, not distract\n5. **Provide context**: Include legends, annotations, and explanations\n6. **Test with users**: Ensure your visualization is intuitive and communicates effectively\n\nRemember that the most sophisticated visualization isn\'t always the most effective. The best visualization is one that clearly communicates your data\'s story to your audience.',
+      excerpt: 'Master complex data visualization methods',
+      author_name: 'Example Author',
+      status: 'published',
+      category: 'Advanced',
+      tags: ['data-visualization', 'advanced'],
+      featured_image: '/placeholder-image.jpg',
+      created_at: '2023-01-02T12:00:00Z',
+      updated_at: '2023-01-02T12:00:00Z'
+    },
+    {
+      id: '3',
+      title: 'Understanding Gaming Analytics',
+      slug: 'understanding-gaming-analytics',
+      content: '# Understanding Gaming Analytics\n\nHow to use data to improve gaming experiences and drive business success in the gaming industry.\n\n## The Growing Importance of Gaming Analytics\n\nThe gaming industry has evolved into one of the most data-rich entertainment sectors. With millions of players generating vast amounts of data every day, gaming analytics has become essential for:\n\n- Improving player experience\n- Increasing player retention\n- Optimizing monetization strategies\n- Informing game design decisions\n- Marketing and user acquisition\n\n## Key Gaming Metrics\n\n### Player Engagement Metrics\n\n- **Daily Active Users (DAU)**: Number of unique users who play the game in a day\n- **Monthly Active Users (MAU)**: Number of unique users who play the game in a month\n- **Session Length**: Average time players spend in a single gaming session\n- **Sessions per Day**: Average number of times players open the game daily\n- **Retention Rate**: Percentage of players who return to the game after their first day/week/month\n\n### Monetization Metrics\n\n- **Average Revenue Per User (ARPU)**: Total revenue divided by number of users\n- **Average Revenue Per Paying User (ARPPU)**: Total revenue divided by number of paying users\n- **Conversion Rate**: Percentage of players who make a purchase\n- **Customer Lifetime Value (LTV)**: Total revenue expected from a player throughout their relationship with the game\n\n### Performance Metrics\n\n- **Load Time**: How long it takes for the game to start\n- **Frame Rate**: Frames per second during gameplay\n- **Crash Rate**: Frequency of game crashes\n- **Network Latency**: Delay in online multiplayer games\n\n## Data Collection Methods\n\nGaming companies collect data through various methods:\n\n1. **In-game Events**: Tracking player actions within the game\n2. **Telemetry**: Collecting technical performance data\n3. **Player Surveys**: Direct feedback from players\n4. **A/B Testing**: Comparing different versions of game features\n5. **Social Media Monitoring**: Analyzing player discussions online\n\n## Analytics Use Cases\n\n### Player Behavior Analysis\n\nUnderstanding how players interact with your game:\n- Which levels are too difficult or too easy?\n- Where do players spend most of their time?\n- What features are most popular?\n- Where do players typically drop off?\n\n### Predictive Analytics\n\nUsing historical data to predict future behavior:\n- Identifying players likely to churn\n- Predicting which players might make purchases\n- Forecasting resource needs for game servers\n\n### Personalization\n\nTailoring the gaming experience to individual players:\n- Customized difficulty levels\n- Personalized in-game offers\n- Adaptive storytelling\n\n## Tools for Gaming Analytics\n\nSeveral specialized tools are available for gaming analytics:\n\n- **Unity Analytics**: Built-in analytics for Unity-developed games\n- **GameAnalytics**: Popular analytics platform specifically for games\n- **Firebase**: Google\'s platform with gaming-specific features\n- **Amplitude**: User behavior analytics platform\n- **Custom Solutions**: Many larger studios build proprietary analytics systems\n\n## Challenges in Gaming Analytics\n\n- **Data Privacy**: Complying with regulations like GDPR and CCPA\n- **Data Volume**: Managing and processing massive amounts of data\n- **Real-time Analysis**: Making decisions based on current player behavior\n- **Cross-platform Tracking**: Unifying data across different devices and platforms\n\n## Getting Started with Gaming Analytics\n\n1. **Define your objectives**: What questions do you want to answer?\n2. **Implement tracking**: Set up the necessary infrastructure to collect data\n3. **Build dashboards**: Create visualizations to monitor key metrics\n4. **Establish processes**: Develop workflows for regular data analysis\n5. **Create feedback loops**: Ensure insights lead to actionable improvements\n\nBy effectively leveraging gaming analytics, developers can create more engaging games, improve player satisfaction, and build more sustainable gaming businesses.',
+      excerpt: 'Using data to enhance player engagement',
+      author_name: 'Example Author',
+      status: 'published',
+      category: 'Gaming',
+      tags: ['gaming', 'data-analysis', 'analytics'],
+      featured_image: '/placeholder-image.jpg',
+      created_at: '2023-01-03T12:00:00Z',
+      updated_at: '2023-01-03T12:00:00Z'
+    }
+  ];
+
+  return articles.map(article => ({
+    params: { slug: article.slug },
+    props: { article },
+  }));
+}
+
+const { article } = Astro.props;
+const content = marked.parse(article.content);
+---
+
+<BlogPost 
+  title={article.title}
+  description={article.excerpt}
+  pubDate={new Date(article.created_at)}
+  updatedDate={article.updated_at ? new Date(article.updated_at) : undefined}
+  coverImage={article.featured_image}
+  author={{ name: article.author_name }}
+  tags={article.tags}
+>
+  <div class="prose max-w-none prose-img:rounded-xl prose-headings:text-blue-600" set:html={content} />
+</BlogPost>
