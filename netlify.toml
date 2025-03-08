@@ -1,7 +1,9 @@
-# This file has been kept as a reference but is no longer used
-# Project is now deployed directly from GitHub
+# Netlify deployment configuration
+# This file should override any dashboard settings
 
 [build]
+  # Explicitly set the base directory to the repository root
+  base = "/"
   command = "npm run build"
   publish = "dist"
 
