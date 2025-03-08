@@ -1,15 +1,15 @@
 # This file has been kept as a reference but is no longer used
 # Project is now deployed directly from GitHub
 
-# [build]
-#   command = "npm run build"
-#   publish = "dist"
-# 
-# [build.environment]
-#   NODE_VERSION = "18"
-# 
-# # This ensures that all routes are handled properly
-# [[redirects]]
-#   from = "/*"
-#   to = "/index.html"
-#   status = 200
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "18"
+
+# This ensures that all routes are handled properly
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
