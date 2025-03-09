@@ -5,11 +5,10 @@ A modern, serverless blog platform built with Astro and Supabase, designed for g
 ## Features
 
 - **Serverless Architecture**: Built with Astro and deployed on Netlify
-- **Content Management**: Admin dashboard for creating and managing blog posts
 - **Cloud Storage**: Content stored in Supabase for scalability and reliability
 - **Responsive Design**: Mobile-friendly interface with Tailwind CSS
 - **SEO Optimized**: Built-in SEO features for better discoverability
-- **Markdown Support**: Write content in Markdown with rich text editor
+- **Markdown Support**: Write content in Markdown
 
 ## Getting Started
 
@@ -53,15 +52,6 @@ The project is configured for deployment on Netlify:
 3. Set the build command to `npm run build`
 4. Set the publish directory to `dist`
 5. Add your environment variables in the Netlify dashboard
-
-## Content Management
-
-The admin dashboard is available at `/admin/` and provides the following features:
-
-- Create, edit, and delete blog posts
-- Upload and manage media files
-- Synchronize content between database and storage
-- Configure site settings
 
 ## Project Structure
 

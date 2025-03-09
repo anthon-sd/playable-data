@@ -119,12 +119,12 @@ const mediaItems = [
         <div class="p-4 border-b">
           <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
             <input type="text" placeholder="Search media..." class="form-input sm:w-64" />
-            <a href="/admin/media/upload" target="_blank" class="btn btn-primary">
+            <button class="btn btn-primary" id="media-button" disabled>
               <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0l-4 4m4-4v12" />
               </svg>
-              Upload New
-            </a>
+              Upload Media
+            </button>
           </div>
         </div>
         
@@ -163,7 +163,7 @@ const mediaItems = [
       const clearButton = library.querySelector('.clear-media-button');
       const modal = library.querySelector('.media-library-modal');
       const closeButtons = library.querySelectorAll('.close-modal');
-      const selectButton = library.querySelector('.select-media');
+      const selectButton = library.querySelector('.select-media') as HTMLButtonElement;
       const mediaItems = library.querySelectorAll('.media-item');
       
       let selectedUrl = '';
@@ -176,7 +176,9 @@ const mediaItems = [
           
           // Reset selection
           selectedUrl = '';
-          selectButton.disabled = true;
+          if (selectButton) {
+            selectButton.disabled = true;
+          }
           mediaItems.forEach(item => {
             item.classList.remove('border-blue-500', 'ring-2', 'ring-blue-500');
           });
@@ -206,7 +208,10 @@ const mediaItems = [
             item.classList.add('border-blue-500', 'ring-2', 'ring-blue-500');
             
             // Update selected URL
-            selectedUrl = item.dataset.url;
+            const itemElement = item as HTMLElement;
+            if (itemElement.dataset && itemElement.dataset.url) {
+              selectedUrl = itemElement.dataset.url;
+            }
             
             // Enable select button
             if (selectButton) {

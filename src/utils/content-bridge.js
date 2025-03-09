@@ -104,7 +104,7 @@ export async function importContentFileToDatabase(slug) {
       cover_image: post.data.coverImage || '',
       tags: post.data.tags || [],
       status: 'published',
-      author_name: post.data.author?.name || 'Admin',
+      author_name: post.data.author?.name || 'Author',
       created_at: post.data.pubDate?.toISOString() || new Date().toISOString(),
       updated_at: post.data.updatedDate?.toISOString() || new Date().toISOString()
     };
@@ -315,7 +315,7 @@ export async function syncContentToDatabase() {
         cover_image: post.data.coverImage || '',
         tags: post.data.tags || [],
         status: 'published',
-        author_name: post.data.author?.name || 'Admin',
+        author_name: post.data.author?.name || 'Author',
         created_at: post.data.pubDate?.toISOString() || new Date().toISOString(),
         updated_at: post.data.updatedDate?.toISOString() || new Date().toISOString()
       };

@@ -1,4 +1,4 @@
-import { getCurrentUser, getUserRole } from './supabase';
+import { getCurrentUser } from './supabase';
 
 export async function isAuthenticated() {
   try {
@@ -10,32 +10,7 @@ export async function isAuthenticated() {
   }
 }
 
-export async function isEditor() {
-  try {
-    const user = await getCurrentUser();
-    if (!user) return false;
-    
-    const role = await getUserRole(user.id);
-    return role === 'editor' || role === 'admin';
-  } catch (error) {
-    console.error('Authorization error:', error);
-    return false;
-  }
-}
-
-export async function isAdmin() {
-  try {
-    const user = await getCurrentUser();
-    if (!user) return false;
-    
-    const role = await getUserRole(user.id);
-    return role === 'admin';
-  } catch (error) {
-    console.error('Authorization error:', error);
-    return false;
-  }
-}
-
-export function redirectToLogin(url = '/admin/login') {
+// Simplified redirect function for generic usage
+export function redirectToLogin(url = '/login') {
   return Response.redirect(url);
 }

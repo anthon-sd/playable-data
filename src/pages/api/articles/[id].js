@@ -16,21 +16,3 @@ export async function GET({ params }) {
     }
   });
 }
-
-export async function PUT({ request, params }) {
-  return new Response(JSON.stringify({ message: 'Static API endpoint' }), {
-    status: 200,
-    headers: {
-      'Content-Type': 'application/json'
-    }
-  });
-}
-
-export async function DELETE({ params }) {
-  return new Response(JSON.stringify({ message: 'Static API endpoint' }), {
-    status: 200,
-    headers: {
-      'Content-Type': 'application/json'
-    }
-  });
-}
