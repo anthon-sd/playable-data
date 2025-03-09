@@ -281,7 +281,7 @@ if (sortBy === 'newest') {
         
         try {
           const response = await fetch(
-            articleId ? `/api/articles/${articleId}` : '/api/articles',
+            articleId ? `/api/articles/${articleId}` : '/api/articles-list',
             {
               method: articleId ? 'PUT' : 'POST',
               headers: { 'Content-Type': 'application/json' },

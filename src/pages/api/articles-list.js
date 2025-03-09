@@ -1,3 +1,4 @@
+// Moved from api/articles/index.js to avoid file naming conflicts during build
 export async function GET({ request }) {
   return new Response(JSON.stringify({ message: 'Static API endpoint' }), {
     status: 200,
@@ -14,4 +15,4 @@ export async function POST({ request }) {
       'Content-Type': 'application/json'
     }
   });
-}
+} 

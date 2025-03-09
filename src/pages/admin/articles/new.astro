@@ -43,7 +43,7 @@ if (Astro.request.method === 'POST') {
     };
     
     // Save to database
-    const response = await fetch('/api/articles', {
+    const response = await fetch('/api/articles-list', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
