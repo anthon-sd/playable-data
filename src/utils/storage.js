@@ -493,37 +493,65 @@ export async function uploadContent(slug, content, metadata = {}) {
  */
 export async function listMedia(folder = '') {
   try {
-    // Ensure storage is initialized
-    await initializeStorage();
-    
-    // List files in folder
-    const { data: files, error } = await supabase.storage
-      .from(MEDIA_BUCKET)
-      .list(folder);
-      
-    if (error) {
-      console.error(`Error listing media in folder "${folder}":`, error);
-      throw error;
+    // If Supabase is not initialized, return empty array
+    if (!supabase) {
+      console.warn('Supabase not initialized, cannot list media');
+      return [];
     }
     
-    // Get public URLs for all files
-    const mediaFiles = files.map(file => {
-      const filePath = folder ? `${folder}/${file.name}` : file.name;
-      const { data: { publicUrl } } = supabase.storage
+    // List buckets to check if media bucket exists
+    try {
+      const { data: buckets, error: bucketsError } = await supabase.storage.listBuckets();
+      
+      if (bucketsError) {
+        console.error('Error listing buckets:', bucketsError);
+        return [];
+      }
+      
+      // If media bucket doesn't exist, return empty array
+      if (!buckets?.find(bucket => bucket.name === MEDIA_BUCKET)) {
+        console.warn(`Media bucket "${MEDIA_BUCKET}" not found`);
+        return [];
+      }
+      
+      // List files in folder
+      const { data, error } = await supabase.storage
         .from(MEDIA_BUCKET)
-        .getPublicUrl(filePath);
+        .list(folder);
+      
+      if (error) {
+        console.error(`Error listing media in folder "${folder}":`, error);
+        return [];
+      }
+      
+      // Map files to add URLs
+      const mediaWithUrls = await Promise.all(data.map(async (file) => {
+        if (file.name === '.emptyFolderPlaceholder') return null;
         
-      return {
-        ...file,
-        path: filePath,
-        url: publicUrl
-      };
-    });
-    
-    return mediaFiles;
+        try {
+          const { data: url } = supabase.storage
+            .from(MEDIA_BUCKET)
+            .getPublicUrl(`${folder ? `${folder}/` : ''}${file.name}`);
+          
+          return {
+            ...file,
+            url: url?.publicUrl || ''
+          };
+        } catch (urlError) {
+          console.error(`Error getting URL for file "${file.name}":`, urlError);
+          return null;
+        }
+      }));
+      
+      // Filter out null values
+      return mediaWithUrls.filter(Boolean);
+    } catch (innerError) {
+      console.error('Error in storage operations:', innerError);
+      return [];
+    }
   } catch (error) {
-    console.error(`Error listing media in folder "${folder}":`, error);
-    throw error;
+    console.error('Error listing media:', error);
+    return [];
   }
 }
 
