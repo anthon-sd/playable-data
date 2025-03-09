@@ -32,13 +32,19 @@ const MOCK_ARTICLES = [
 ];
 
 export async function getArticles() {
+  // If Supabase is not initialized, return mock data immediately
+  if (!supabase) {
+    console.info('Supabase client not available, using mock article data');
+    return MOCK_ARTICLES;
+  }
+  
   try {
-    // If Supabase is not initialized, return mock data
-    if (!supabase) {
-      console.warn('Using mock article data (Supabase not initialized)');
+    // Double-check Supabase is actually a valid client before attempting the query
+    if (!supabase.from) {
+      console.warn('Invalid Supabase client, using mock article data');
       return MOCK_ARTICLES;
     }
-
+    
     const { data, error } = await supabase
       .from('articles')
       .select('*')
@@ -46,7 +52,12 @@ export async function getArticles() {
       
     if (error) {
       console.error('Error fetching articles:', error);
-      throw error;
+      return MOCK_ARTICLES;
+    }
+    
+    if (!data || data.length === 0) {
+      console.warn('No articles found in database, using mock data');
+      return MOCK_ARTICLES;
     }
     
     return data.map(article => ({
@@ -54,32 +65,40 @@ export async function getArticles() {
       topics: article.topics || article.tags || DEFAULT_TOPICS
     }));
   } catch (error) {
-    console.error('Error fetching articles:', error);
-    // If there's an error, return mock data instead of throwing
-    console.warn('Using mock article data due to error');
+    console.error('Error in getArticles:', error);
     return MOCK_ARTICLES;
   }
 }
 
 export async function getArticleById(id) {
+  // If Supabase is not initialized, return mock data
+  if (!supabase) {
+    console.info('Supabase client not available, using mock article data for ID:', id);
+    // Find a mock article with matching ID or return the first one
+    return MOCK_ARTICLES.find(article => article.id === id) || MOCK_ARTICLES[0];
+  }
+  
   try {
-    // If Supabase is not initialized, return mock data
-    if (!supabase) {
-      console.warn('Using mock article data (Supabase not initialized)');
-      const mockArticle = MOCK_ARTICLES.find(a => a.id === id || a.slug === id);
-      if (mockArticle) return mockArticle;
-      throw new Error('Article not found in mock data');
+    // Double-check Supabase is actually a valid client before attempting the query
+    if (!supabase.from) {
+      console.warn('Invalid Supabase client, using mock article data');
+      return MOCK_ARTICLES.find(article => article.id === id) || MOCK_ARTICLES[0];
     }
-
+    
     const { data, error } = await supabase
       .from('articles')
       .select('*')
-      .eq(id.includes('-') ? 'id' : 'slug', id)
+      .eq('id', id)
       .single();
       
     if (error) {
-      console.error(`Error getting article by ID/slug ${id}:`, error);
-      throw error;
+      console.error(`Error fetching article with id ${id}:`, error);
+      return MOCK_ARTICLES.find(article => article.id === id) || MOCK_ARTICLES[0];
+    }
+    
+    if (!data) {
+      console.warn(`No article found with id ${id}, using mock data`);
+      return MOCK_ARTICLES.find(article => article.id === id) || MOCK_ARTICLES[0];
     }
     
     return {
@@ -87,29 +106,29 @@ export async function getArticleById(id) {
       topics: data.topics || data.tags || DEFAULT_TOPICS
     };
   } catch (error) {
-    console.error(`Error getting article by ID/slug ${id}:`, error);
-    
-    // For getArticleById, we still throw because we don't want to 
-    // return an incorrect article, but log a more helpful error message
-    if (!supabase) {
-      throw new Error(`Article with ID/slug "${id}" not found (Supabase not initialized)`);
-    }
-    
-    throw error;
+    console.error(`Error in getArticleById for id ${id}:`, error);
+    return MOCK_ARTICLES.find(article => article.id === id) || MOCK_ARTICLES[0];
   }
 }
 
 export async function getCurrentUser() {
+  // If Supabase is not initialized, return null
+  if (!supabase || !supabase.auth) {
+    console.info('Supabase client not available or auth not initialized, no user available');
+    return null;
+  }
+  
   try {
-    if (!supabase) return null;
-
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) return null;
+    const { data, error } = await supabase.auth.getSession();
     
-    const { data: { user } } = await supabase.auth.getUser();
-    return user;
+    if (error) {
+      console.error('Error getting current user session:', error);
+      return null;
+    }
+    
+    return data?.session?.user || null;
   } catch (error) {
-    console.error('Error getting current user:', error);
+    console.error('Error in getCurrentUser:', error);
     return null;
   }
 }

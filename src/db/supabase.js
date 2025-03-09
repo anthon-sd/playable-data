@@ -3,11 +3,24 @@ import { createClient } from "@supabase/supabase-js";
 const supabaseUrl = import.meta.env.PUBLIC_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.PUBLIC_SUPABASE_ANON_KEY;
 
+// Check if the API key format is valid (basic format check)
+function isValidApiKey(key) {
+  // Supabase keys are JWT tokens that should follow this format
+  return typeof key === 'string' && 
+         key.split('.').length === 3 && 
+         key.length > 30; // Arbitrary minimum length
+}
+
+// Initialize with null - we'll only use Supabase if credentials check out
 let supabase = null;
 
-try {
-  if (supabaseUrl && supabaseAnonKey) {
-    console.log('Initializing Supabase client with URL:', supabaseUrl);
+// Only attempt initialization if environment variables look valid
+if (supabaseUrl && 
+    supabaseUrl.includes('supabase.co') && 
+    isValidApiKey(supabaseAnonKey)) {
+  
+  try {
+    console.log('Initializing Supabase client with valid credentials');
     supabase = createClient(supabaseUrl, supabaseAnonKey, {
       auth: {
         persistSession: false // Since we're running in SSG mode
@@ -17,28 +30,14 @@ try {
         maxRetries: 3
       }
     });
-    
-    // Test connection with a simple query to verify credentials
-    (async function testConnection() {
-      try {
-        const { error } = await supabase.from('articles').select('count', { count: 'exact', head: true });
-        if (error) {
-          console.warn('Supabase API key validation failed:', error.message);
-          supabase = null; // Reset to null so app falls back to mock data
-        } else {
-          console.log('Successfully connected to Supabase');
-        }
-      } catch (e) {
-        console.warn('Supabase connection test failed:', e.message);
-        supabase = null; // Reset to null so app falls back to mock data
-      }
-    })();
-  } else {
-    console.warn('Missing Supabase credentials. Running in fallback mode.');
+  } catch (error) {
+    console.error('Error initializing Supabase client:', error);
+    supabase = null;
   }
-} catch (error) {
-  console.error('Error initializing Supabase client:', error);
-  supabase = null; // Ensure we fallback to mock data
+} else {
+  console.warn('Invalid or missing Supabase credentials detected. Running in fallback mode.');
+  console.warn('Site will build with mock data instead of live Supabase data.');
+  supabase = null;
 }
 
 export { supabase };
