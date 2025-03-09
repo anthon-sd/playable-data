@@ -2,6 +2,7 @@
 import Layout from './Layout.astro';
 import { formatDate } from '../utils/date';
 import type { CollectionEntry } from 'astro:content';
+import NewsletterSignup from '../components/NewsletterSignup.astro';
 
 interface Props {
   post: CollectionEntry<'blog'>;
@@ -98,4 +99,8 @@ const { title, description, pubDate, updatedDate, coverImage, author, tags } = p
       </div>
     </div>
   </article>
+  
+  <div class="mt-16">
+    <NewsletterSignup />
+  </div>
 </Layout>
