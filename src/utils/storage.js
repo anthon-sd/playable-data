@@ -59,19 +59,66 @@ export async function initializeStorage() {
  */
 export async function getArticleContent(fileName) {
   try {
+    console.log(`Fetching article content for: ${fileName}`);
+    
+    // Handle potential URL-encoding in the filename
+    const normalizedFileName = decodeURIComponent(fileName);
+    
+    // Attempt to download the file
     const { data, error } = await supabase.storage
       .from(ARTICLES_BUCKET)
-      .download(fileName);
+      .download(normalizedFileName);
       
     if (error) {
-      console.error('Error downloading article:', error);
+      console.error(`Error downloading article "${normalizedFileName}":`, error);
+      
+      // Try alternative approach if the file might have spaces or special characters
+      if (error.message && (error.message.includes('404') || error.message.includes('not found'))) {
+        console.log(`Trying alternative encoding for filename: ${fileName}`);
+        
+        // List all files and find a close match
+        const { data: files } = await supabase.storage
+          .from(ARTICLES_BUCKET)
+          .list();
+          
+        if (files && files.length > 0) {
+          // Look for close matches (ignoring case, etc.)
+          const possibleMatch = files.find(file => 
+            file.name.toLowerCase() === fileName.toLowerCase() ||
+            file.name.replace(/\s+/g, '') === fileName.replace(/\s+/g, '')
+          );
+          
+          if (possibleMatch) {
+            console.log(`Found possible match: ${possibleMatch.name}`);
+            const { data: matchData, error: matchError } = await supabase.storage
+              .from(ARTICLES_BUCKET)
+              .download(possibleMatch.name);
+              
+            if (matchError) {
+              console.error(`Error downloading possible match "${possibleMatch.name}":`, matchError);
+              throw matchError;
+            }
+            
+            const content = await matchData.text();
+            return content;
+          }
+        }
+      }
+      
       throw error;
     }
     
+    // Convert the blob to text
     const content = await data.text();
+    
+    // Quick validation that the content looks like a markdown file with frontmatter
+    if (!content.trim().startsWith('---')) {
+      console.warn(`File ${fileName} doesn't appear to have valid frontmatter`);
+    }
+    
     return content;
   } catch (error) {
-    console.error('Error getting article content:', error);
+    console.error(`Error getting content for article "${fileName}":`, error);
     throw error;
   }
 }
@@ -81,7 +128,100 @@ export async function getArticleContent(fileName) {
  */
 export function parseMarkdown(content) {
   try {
-    const { data: frontmatter, content: markdown } = matter(content);
+    // Check for known problematic patterns in frontmatter
+    const hasTitleWithColon = /^title:.*?:.*?$/m.test(content);
+    const hasDescriptionWithColon = /^description:.*?:.*?$/m.test(content);
+    
+    // If we detect problematic patterns, use our custom parser
+    if (hasTitleWithColon || hasDescriptionWithColon) {
+      console.log('Detected YAML with special characters, using custom parser');
+      
+      // Extract frontmatter between --- delimiters
+      const frontmatterMatch = content.match(/^---\r?\n([\s\S]*?)\r?\n---/);
+      
+      if (frontmatterMatch && frontmatterMatch[1]) {
+        const frontmatterText = frontmatterMatch[1];
+        const frontmatterLines = frontmatterText.split('\n');
+        const metadata = {};
+        
+        // Process each line manually
+        let currentKey = null;
+        let currentValue = null;
+        let inMultiline = false;
+        
+        frontmatterLines.forEach(line => {
+          line = line.trim();
+          
+          // Skip empty lines
+          if (!line) return;
+          
+          // Check if this is a new key
+          const keyMatch = line.match(/^([^:]+):\s*(.*)/);
+          
+          if (keyMatch && !inMultiline) {
+            currentKey = keyMatch[1].trim();
+            currentValue = keyMatch[2].trim();
+            
+            // Handle specific keys with special processing
+            if (currentKey === 'title' || currentKey === 'description') {
+              // For title and description, take the whole line after the first colon
+              currentValue = line.substring(line.indexOf(':') + 1).trim();
+            }
+            
+            // Check if this is the start of a multiline value (like an author object)
+            if (!currentValue) {
+              inMultiline = true;
+              metadata[currentKey] = {};
+            } 
+            // Check if this is an array value
+            else if (currentValue.startsWith('[') && currentValue.endsWith(']')) {
+              try {
+                // Try to parse as JSON array
+                metadata[currentKey] = JSON.parse(currentValue);
+              } catch (e) {
+                // Fallback: simple string splitting for arrays
+                metadata[currentKey] = currentValue.replace(/[\[\]"']/g, '').split(',').map(s => s.trim());
+              }
+            }
+            // Regular string value
+            else {
+              metadata[currentKey] = currentValue;
+            }
+          } 
+          // Handle multiline values (like nested objects)
+          else if (inMultiline && currentKey) {
+            const nestedMatch = line.match(/^\s+([^:]+):\s*(.*)/);
+            if (nestedMatch) {
+              const nestedKey = nestedMatch[1].trim();
+              const nestedValue = nestedMatch[2].trim();
+              metadata[currentKey][nestedKey] = nestedValue;
+            } else {
+              // End of multiline
+              inMultiline = false;
+            }
+          }
+        });
+        
+        // Get the content part (everything after frontmatter)
+        const markdownContent = content.replace(/^---[\s\S]*?---/, '').trim();
+        const html = marked.parse(markdownContent);
+        
+        return {
+          metadata,
+          content: markdownContent,
+          html
+        };
+      }
+    }
+    
+    // If no special patterns detected, or if our custom parsing failed, try standard approach
+    // Pre-process content to handle YAML syntax issues
+    const preprocessedContent = content
+      .replace(/^(title:)(.*?):(.*?)$/m, 'title: "$2:$3"') // Quote titles with colons 
+      .replace(/^(description:)(.*?):(.*?)$/m, 'description: "$2:$3"'); // Quote descriptions with colons
+    
+    // Use matter with default options
+    const { data: frontmatter, content: markdown } = matter(preprocessedContent);
     const html = marked.parse(markdown);
     
     return {
@@ -91,7 +231,16 @@ export function parseMarkdown(content) {
     };
   } catch (error) {
     console.error('Error parsing markdown:', error);
-    throw error;
+    // Provide a minimal fallback for parsing errors
+    return {
+      metadata: {
+        title: "Error parsing document",
+        description: "This document could not be properly parsed.",
+        status: "draft"
+      },
+      content: content.replace(/^---[\s\S]*?---/, '').trim(), // Remove frontmatter attempt
+      html: marked.parse(content.replace(/^---[\s\S]*?---/, '').trim())
+    };
   }
 }
 
@@ -122,42 +271,68 @@ export async function getAllArticles() {
       return [];
     }
     
-    console.log(`Found ${files.length} files in articles bucket. Processing markdown files...`);
+    const mdFiles = files.filter(file => file.name.endsWith('.md'));
+    console.log(`Found ${mdFiles.length} markdown files in articles bucket. Processing files...`);
     
     const articles = await Promise.all(
-      files
-        .filter(file => file.name.endsWith('.md'))
-        .map(async file => {
-          try {
-            const content = await getArticleContent(file.name);
-            const { metadata, html } = parseMarkdown(content);
-            
-            const slug = file.name.replace('.md', '');
-            
-            return {
-              id: slug,
-              slug: slug,
-              title: metadata.title || 'Untitled Article',
-              description: metadata.description || '',
-              content: html,
-              tags: metadata.tags || [],
-              topics: metadata.topics || metadata.tags || [],
-              cover_image: metadata.cover_image || '',
-              pubDate: metadata.pubDate || new Date().toISOString(),
-              updatedDate: metadata.updatedDate || metadata.pubDate || new Date().toISOString(),
-              featured: metadata.featured || false,
-              status: metadata.status || 'published',
-              author: metadata.author || { name: 'Playable Data Team' }
-            };
-          } catch (error) {
-            console.error(`Error processing article ${file.name}:`, error);
-            return null;
-          }
-        })
+      mdFiles.map(async file => {
+        try {
+          // Log which file we're processing for debugging
+          console.log(`Processing article: ${file.name}`);
+          
+          // Get the content of the markdown file
+          const content = await getArticleContent(file.name);
+          
+          // Parse the markdown content with frontmatter
+          const { metadata, html } = parseMarkdown(content);
+          
+          // Generate a slug from the filename (removing .md extension)
+          const slug = file.name.replace(/\.md$/, '');
+          
+          // Ensure required fields exist with sensible defaults
+          return {
+            id: slug,
+            slug: slug,
+            title: metadata.title || file.name.replace(/\.md$/, '').replace(/-/g, ' '),
+            description: metadata.description || '',
+            content: html,
+            tags: metadata.tags || [],
+            topics: metadata.topics || metadata.tags || [],
+            cover_image: metadata.cover_image || '',
+            pubDate: metadata.pubDate || new Date().toISOString(),
+            updatedDate: metadata.updatedDate || metadata.pubDate || new Date().toISOString(),
+            featured: metadata.featured || false,
+            status: metadata.status || 'published',
+            author: metadata.author || { name: 'Playable Data Team' }
+          };
+        } catch (articleError) {
+          // Log the error but don't halt processing of other articles
+          console.error(`Error processing article ${file.name}:`, articleError);
+          
+          // Return a placeholder for this article to prevent the whole array from failing
+          return {
+            id: file.name.replace(/\.md$/, ''),
+            slug: file.name.replace(/\.md$/, ''),
+            title: `Error: ${file.name}`,
+            description: 'This article could not be processed due to an error.',
+            content: '<p>There was an error processing this article. The content is temporarily unavailable.</p>',
+            tags: [],
+            topics: [],
+            cover_image: '',
+            pubDate: new Date().toISOString(),
+            updatedDate: new Date().toISOString(),
+            featured: false,
+            status: 'draft',
+            author: { name: 'Playable Data Team' }
+          };
+        }
+      })
     );
     
-    const validArticles = articles.filter(Boolean); // Remove any failed articles
-    console.log(`Successfully processed ${validArticles.length} articles from storage`);
+    const validArticles = articles.filter(article => 
+      article && article.status !== 'draft' && article.title !== 'Error parsing document'
+    );
+    console.log(`Successfully processed ${validArticles.length} valid articles from storage`);
     
     // Sort articles by date, newest first
     return validArticles.sort((a, b) => {

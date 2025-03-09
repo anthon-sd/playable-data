@@ -1,10 +1,11 @@
-fix: update blog post rendering to use Supabase storage bucket
+fix: improve Markdown frontmatter parsing for blog posts
 
-- Modify getArticles function to fetch blog posts from 'articles' storage bucket
-- Enhance getAllArticles function with improved error handling and Markdown parsing
-- Update blog post template to render content from storage
-- Add support for Markdown frontmatter format with proper field mapping
-- Implement fallback options for missing data
+- Add custom YAML parser to handle special characters in frontmatter
+- Fix specific issue with colons in title fields causing build errors
+- Enhance error handling in article processing pipeline
+- Add fallback mechanisms to prevent build failures
+- Improve logging for better debugging of parsing issues
+- Update file handling to better detect matching filenames
 
-This change ensures the blog site renders content from Markdown files stored 
-in the Supabase storage bucket rather than from a database table. 
+This change ensures blog posts with special characters in their frontmatter
+can be properly parsed and rendered from the Supabase storage bucket. 
