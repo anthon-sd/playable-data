@@ -134,20 +134,23 @@ export async function getCurrentUser() {
 }
 
 export async function signIn(email, password) {
+  // If using service_role key for build, auth endpoints still work 
+  // but we should improve error handling
   try {
-    if (!supabase) {
-      return { data: null, error: new Error('Supabase not initialized') };
+    if (!supabase || !supabase.auth) {
+      throw new Error('Supabase auth not initialized');
     }
-
+    
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password
     });
     
-    return { data, error };
+    if (error) throw error;
+    return data;
   } catch (error) {
-    console.error('Error signing in:', error);
-    return { data: null, error };
+    console.error('Authentication error:', error);
+    throw error;
   }
 }
 
@@ -222,5 +225,28 @@ export async function updateArticle(id, articleData) {
   } catch (error) {
     console.error(`Error updating article ${id}:`, error);
     throw error;
+  }
+}
+
+// Add a function to check if we're using a service_role key
+export function isUsingServiceRole() {
+  if (!supabase) return false;
+  
+  try {
+    // Try to decode the JWT to check if it's a service_role key
+    const token = supabase.auth.autoRefreshToken?.currentSession?.access_token || 
+                 supabase.supabaseKey;
+    
+    if (!token) return false;
+    
+    // If token contains a "." it's likely a JWT
+    if (typeof token === 'string' && token.split('.').length === 3) {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      return payload.role === 'service_role';
+    }
+    
+    return false;
+  } catch (e) {
+    return false;
   }
 }
