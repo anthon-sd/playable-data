@@ -8,7 +8,8 @@ export function getStaticPaths() {
   ];
 }
 
-export async function get({ params }) {
+// Updated to uppercase per Astro recommendation
+export async function GET({ params }) {
   try {
     const { slug } = params;
     
@@ -41,7 +42,8 @@ export async function get({ params }) {
   }
 }
 
-export async function del({ params }) {
+// Updated to uppercase per Astro recommendation
+export async function DELETE({ params }) {
   try {
     const { slug } = params;
     

@@ -7,7 +7,8 @@ export function getStaticPaths() {
   ];
 }
 
-export async function get({ params }) {
+// Renaming lowercase functions to uppercase as recommended by Astro
+export async function GET({ params }) {
   return new Response(JSON.stringify({ message: 'Static API endpoint' }), {
     status: 200,
     headers: {
@@ -16,7 +17,7 @@ export async function get({ params }) {
   });
 }
 
-export async function put({ request, params }) {
+export async function PUT({ request, params }) {
   return new Response(JSON.stringify({ message: 'Static API endpoint' }), {
     status: 200,
     headers: {
@@ -25,7 +26,7 @@ export async function put({ request, params }) {
   });
 }
 
-export async function del({ params }) {
+export async function DELETE({ params }) {
   return new Response(JSON.stringify({ message: 'Static API endpoint' }), {
     status: 200,
     headers: {

@@ -9,7 +9,7 @@ export function getStaticPaths() {
   ];
 }
 
-export async function post({ params }) {
+export async function POST({ params }) {
   try {
     const { slug } = params;
     

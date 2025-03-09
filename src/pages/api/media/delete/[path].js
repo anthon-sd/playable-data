@@ -8,7 +8,8 @@ export function getStaticPaths() {
   ];
 }
 
-export async function del({ params }) {
+// Updated to uppercase per Astro recommendation
+export async function DELETE({ params }) {
   try {
     const { path } = params;
     

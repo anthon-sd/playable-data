@@ -1,4 +1,4 @@
-export async function get({ request }) {
+export async function GET({ request }) {
   return new Response(JSON.stringify({ message: 'Static API endpoint' }), {
     status: 200,
     headers: {
@@ -7,7 +7,7 @@ export async function get({ request }) {
   });
 }
 
-export async function post({ request }) {
+export async function POST({ request }) {
   return new Response(JSON.stringify({ message: 'Static API endpoint' }), {
     status: 200,
     headers: {

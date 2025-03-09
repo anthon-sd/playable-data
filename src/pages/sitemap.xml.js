@@ -1,6 +1,6 @@
 import { getArticles } from '../utils/supabase';
 
-export async function get() {
+export async function GET() {
   try {
     let articles = [];
     
