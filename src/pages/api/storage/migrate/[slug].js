@@ -1,9 +1,27 @@
 import { getArticleById } from '../../../../utils/supabase';
 import { uploadContent, articleToStorageFormat } from '../../../../utils/storage';
 
+// For static site builds, we need to define all possible paths
+export function getStaticPaths() {
+  return [
+    // This is a placeholder path for static site generation
+    { params: { slug: 'placeholder' } }
+  ];
+}
+
 export async function post({ params }) {
   try {
     const { slug } = params;
+    
+    // Skip operation for placeholder during build
+    if (slug === 'placeholder') {
+      return new Response(JSON.stringify({ message: 'Static API endpoint' }), {
+        status: 200,
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+    }
     
     // Try to get article from database
     try {

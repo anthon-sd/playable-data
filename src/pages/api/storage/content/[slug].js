@@ -1,8 +1,26 @@
 import { getContent, deleteContent } from '../../../../utils/storage';
 
+// For static site builds, we need to define all possible paths
+export function getStaticPaths() {
+  return [
+    // This is a placeholder path for static site generation
+    { params: { slug: 'placeholder' } }
+  ];
+}
+
 export async function get({ params }) {
   try {
     const { slug } = params;
+    
+    // Skip operation for placeholder during build
+    if (slug === 'placeholder') {
+      return new Response(JSON.stringify({ message: 'Static API endpoint' }), {
+        status: 200,
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+    }
     
     // Get content from storage
     const content = await getContent(slug);
@@ -26,6 +44,16 @@ export async function get({ params }) {
 export async function del({ params }) {
   try {
     const { slug } = params;
+    
+    // Skip operation for placeholder during build
+    if (slug === 'placeholder') {
+      return new Response(JSON.stringify({ message: 'Static API endpoint' }), {
+        status: 200,
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+    }
     
     // Delete content from storage
     await deleteContent(slug);
