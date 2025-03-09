@@ -46,6 +46,32 @@ const allTopics = [...new Set(allPosts.flatMap(post => post.topics || post.tags 
 
 // Convert database articles to the format expected by components
 function convertArticleToPost(article) {
+  // Normalize author information
+  let author = article.author;
+  
+  // If author is a string, convert to object
+  if (typeof author === 'string') {
+    author = { name: author };
+  }
+  // If author is missing, check for individual fields
+  else if (!author) {
+    author = {
+      name: article.author_name || 'Playable Data Team',
+      image: article.author_image
+    };
+  }
+  // If author is an object but missing properties, add defaults
+  else if (typeof author === 'object') {
+    if (!author.name) {
+      author.name = article.author_name || 'Playable Data Team';
+    }
+    if (!author.image && article.author_image) {
+      author.image = article.author_image;
+    }
+  }
+  
+  console.log(`Converting article "${article.title}" - Author:`, JSON.stringify(author));
+  
   return {
     slug: article.slug,
     data: {
@@ -55,10 +81,7 @@ function convertArticleToPost(article) {
       updatedDate: article.updatedDate ? new Date(article.updatedDate) : 
                   article.updated_at ? new Date(article.updated_at) : undefined,
       coverImage: article.cover_image,
-      author: article.author || {
-        name: article.author_name || 'Playable Data Team',
-        image: article.author_image
-      },
+      author: author,
       topics: article.topics || article.tags || [],
       featured: article.featured
     }

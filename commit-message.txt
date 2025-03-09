@@ -20,4 +20,16 @@ fix: improve blog components to use Markdown metadata correctly
 - Update main page to properly filter for published posts only
 
 This change ensures the blog properly displays content and metadata from
-Markdown files stored in the Supabase storage bucket. 
+Markdown files stored in the Supabase storage bucket.
+
+fix: resolve author name display issues in blog posts
+
+- Add author normalization function to handle various frontmatter formats
+- Update parseMarkdown to properly extract author information from YAML
+- Fix author object handling in blog components
+- Add support for author fields with string values or nested objects
+- Implement proper fallbacks for missing author information
+- Add detailed logging for debugging author metadata issues
+
+This change ensures author names and images display correctly on blog posts
+regardless of how the author information is structured in the Markdown frontmatter. 

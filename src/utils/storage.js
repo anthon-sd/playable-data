@@ -202,6 +202,12 @@ export function parseMarkdown(content) {
           }
         });
         
+        // Handle special case for author field which might need normalization
+        if (metadata.author && typeof metadata.author === 'string') {
+          // If author is a string, convert it to an object with name property
+          metadata.author = { name: metadata.author };
+        }
+        
         // Get the content part (everything after frontmatter)
         const markdownContent = content.replace(/^---[\s\S]*?---/, '').trim();
         const html = marked.parse(markdownContent);
@@ -222,6 +228,13 @@ export function parseMarkdown(content) {
     
     // Use matter with default options
     const { data: frontmatter, content: markdown } = matter(preprocessedContent);
+    
+    // Handle special case for author field which might need normalization
+    if (frontmatter.author && typeof frontmatter.author === 'string') {
+      // If author is a string, convert it to an object with name property
+      frontmatter.author = { name: frontmatter.author };
+    }
+    
     const html = marked.parse(markdown);
     
     return {
@@ -236,12 +249,41 @@ export function parseMarkdown(content) {
       metadata: {
         title: "Error parsing document",
         description: "This document could not be properly parsed.",
-        status: "draft"
+        status: "draft",
+        author: { name: 'Playable Data Team' }
       },
       content: content.replace(/^---[\s\S]*?---/, '').trim(), // Remove frontmatter attempt
       html: marked.parse(content.replace(/^---[\s\S]*?---/, '').trim())
     };
   }
+}
+
+/**
+ * Normalize author information to ensure consistent format
+ * @param {any} author - The author information which might be in different formats
+ * @returns {Object} - Normalized author object with name and optional image
+ */
+function normalizeAuthor(author) {
+  if (!author) {
+    return { name: 'Playable Data Team' };
+  }
+  
+  // If author is a string, convert to object
+  if (typeof author === 'string') {
+    return { name: author };
+  }
+  
+  // If author is already an object with a name property, use it
+  if (typeof author === 'object' && author.name) {
+    return {
+      name: author.name,
+      image: author.image || author.avatar || author.picture || null,
+      id: author.id || null
+    };
+  }
+  
+  // Default fallback
+  return { name: 'Playable Data Team' };
 }
 
 /**
@@ -286,8 +328,17 @@ export async function getAllArticles() {
           // Parse the markdown content with frontmatter
           const { metadata, html } = parseMarkdown(content);
           
+          // For debugging, log the metadata structure including author
+          console.log(`Article ${file.name} metadata:`, JSON.stringify({
+            title: metadata.title,
+            author: metadata.author
+          }));
+          
           // Generate a slug from the filename (removing .md extension)
           const slug = file.name.replace(/\.md$/, '');
+          
+          // Normalize author information
+          const normalizedAuthor = normalizeAuthor(metadata.author);
           
           // Ensure required fields exist with sensible defaults
           return {
@@ -303,7 +354,7 @@ export async function getAllArticles() {
             updatedDate: metadata.updatedDate || metadata.pubDate || new Date().toISOString(),
             featured: metadata.featured || false,
             status: metadata.status || 'published',
-            author: metadata.author || { name: 'Playable Data Team' }
+            author: normalizedAuthor
           };
         } catch (articleError) {
           // Log the error but don't halt processing of other articles
