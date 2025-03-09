@@ -1,8 +1,44 @@
 import { supabase } from '../db/supabase';
 import { DEFAULT_TOPICS } from './topics';
 
+// Mock data for when Supabase is not initialized
+const MOCK_ARTICLES = [
+  {
+    id: 'placeholder-1',
+    title: 'Getting Started with Analytics',
+    slug: 'getting-started',
+    content: 'This is placeholder content for when Supabase is not available.',
+    description: 'A guide to getting started with analytics in your games.',
+    cover_image: 'https://images.unsplash.com/photo-1511512578047-dfb367046420',
+    tags: ['analytics', 'beginners'],
+    topics: ['analytics', 'beginners', 'games'],
+    status: 'published',
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
+  },
+  {
+    id: 'placeholder-2',
+    title: 'Advanced Analytics Techniques',
+    slug: 'advanced-analytics',
+    content: 'This is another placeholder article for when Supabase is unavailable.',
+    description: 'Learn advanced analytics techniques for game development.',
+    cover_image: 'https://images.unsplash.com/photo-1518791841217-8f162f1e1131',
+    tags: ['analytics', 'advanced'],
+    topics: ['analytics', 'advanced', 'games'],
+    status: 'published',
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
+  }
+];
+
 export async function getArticles() {
   try {
+    // If Supabase is not initialized, return mock data
+    if (!supabase) {
+      console.warn('Using mock article data (Supabase not initialized)');
+      return MOCK_ARTICLES;
+    }
+
     const { data, error } = await supabase
       .from('articles')
       .select('*')
@@ -19,12 +55,22 @@ export async function getArticles() {
     }));
   } catch (error) {
     console.error('Error fetching articles:', error);
-    throw error;
+    // If there's an error, return mock data instead of throwing
+    console.warn('Using mock article data due to error');
+    return MOCK_ARTICLES;
   }
 }
 
 export async function getArticleById(id) {
   try {
+    // If Supabase is not initialized, return mock data
+    if (!supabase) {
+      console.warn('Using mock article data (Supabase not initialized)');
+      const mockArticle = MOCK_ARTICLES.find(a => a.id === id || a.slug === id);
+      if (mockArticle) return mockArticle;
+      throw new Error('Article not found in mock data');
+    }
+
     const { data, error } = await supabase
       .from('articles')
       .select('*')
@@ -42,6 +88,13 @@ export async function getArticleById(id) {
     };
   } catch (error) {
     console.error(`Error getting article by ID/slug ${id}:`, error);
+    
+    // For getArticleById, we still throw because we don't want to 
+    // return an incorrect article, but log a more helpful error message
+    if (!supabase) {
+      throw new Error(`Article with ID/slug "${id}" not found (Supabase not initialized)`);
+    }
+    
     throw error;
   }
 }

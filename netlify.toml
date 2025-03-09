@@ -9,6 +9,9 @@
 
 [build.environment]
   NODE_VERSION = "18"
+  PUBLIC_SUPABASE_URL = "https://gxhvwiwtmelfrxnwptrr.supabase.co"
+  PUBLIC_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd4aHZ3aXd0bWVsZnJ4bndwdHJyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MDY2MzA0OTEsImV4cCI6MjAyMjIwNjQ5MX0.Wd0jdhgKj0NbY0zEiTcbJ5ydXG_MFJsQGQBqzVfxQXo"
+  SITE_URL = "https://playabledata.io"
 
 # This ensures that all routes are handled properly
 [[redirects]]
