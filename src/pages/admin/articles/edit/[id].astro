@@ -5,8 +5,15 @@ import { marked } from 'marked';
 import RichTextEditor from '../../../../components/RichTextEditor.astro';
 import MediaLibrary from '../../../../components/MediaLibrary.astro';
 
-// Disable static pre-rendering for this route to enable server-side rendering
-export const prerender = false;
+// This is required for dynamic routes in static mode
+// It will generate a placeholder page that will be hydrated with client-side data
+export function getStaticPaths() {
+  return [
+    // This is just a placeholder to satisfy Astro's static build requirements
+    // The actual data will be fetched client-side
+    { params: { id: 'placeholder' } }
+  ];
+}
 
 // Get article ID from URL
 const { id } = Astro.params;
@@ -16,8 +23,12 @@ let article = null;
 let errorMessage = '';
 let successMessage = '';
 
+// In static builds, this code only runs during build time for the placeholder
+// In the browser, we'll fetch the real data client-side
 try {
-  article = await getArticleById(id);
+  if (id !== 'placeholder') {
+    article = await getArticleById(id);
+  }
 } catch (error) {
   console.error('Error fetching article:', error);
   errorMessage = error.message || 'Failed to load article';
@@ -212,6 +223,39 @@ const htmlContent = article?.content ? marked.parse(article.content) : '';
       const deleteModal = document.getElementById('delete-modal');
       const cancelDelete = document.getElementById('cancel-delete');
       const confirmDelete = document.getElementById('confirm-delete');
+      
+      // For static builds, fetch the article data client-side
+      const articleId = window.location.pathname.split('/').pop();
+      const articleContainer = document.querySelector('.card');
+      const loadingMessage = document.querySelector('.card.p-8.text-center');
+      
+      // Only fetch if we're on the client and don't already have an article
+      if (articleId && articleId !== 'placeholder' && loadingMessage) {
+        // Fetch the article data
+        fetch(`/api/articles/${articleId}/`)
+          .then(response => {
+            if (!response.ok) {
+              throw new Error('Failed to load article');
+            }
+            return response.json();
+          })
+          .then(data => {
+            // Redirect to the article list if we can't find the article
+            if (!data) {
+              window.location.href = '/admin/articles/';
+              return;
+            }
+            
+            // Reload the page to display the article data
+            window.location.reload();
+          })
+          .catch(error => {
+            console.error('Error loading article:', error);
+            if (loadingMessage) {
+              loadingMessage.innerHTML = `<p class="text-red-500">Error: ${error.message}</p>`;
+            }
+          });
+      }
       
       if (deleteButton && deleteModal) {
         deleteButton.addEventListener('click', () => {
