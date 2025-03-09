@@ -100,6 +100,12 @@ export function parseMarkdown(content) {
  */
 export async function getAllArticles() {
   try {
+    // If Supabase is not initialized, return empty array
+    if (!supabase) {
+      console.warn('Supabase not initialized, cannot list articles');
+      return [];
+    }
+    
     await initializeStorage();
     
     const { data: files, error: listError } = await supabase.storage
@@ -111,6 +117,13 @@ export async function getAllArticles() {
       throw listError;
     }
     
+    if (!files || files.length === 0) {
+      console.warn('No markdown files found in storage bucket');
+      return [];
+    }
+    
+    console.log(`Found ${files.length} files in articles bucket. Processing markdown files...`);
+    
     const articles = await Promise.all(
       files
         .filter(file => file.name.endsWith('.md'))
@@ -119,11 +132,22 @@ export async function getAllArticles() {
             const content = await getArticleContent(file.name);
             const { metadata, html } = parseMarkdown(content);
             
+            const slug = file.name.replace('.md', '');
+            
             return {
-              ...metadata,
-              slug: file.name.replace('.md', ''),
+              id: slug,
+              slug: slug,
+              title: metadata.title || 'Untitled Article',
+              description: metadata.description || '',
               content: html,
-              topics: metadata.topics || metadata.tags || []
+              tags: metadata.tags || [],
+              topics: metadata.topics || metadata.tags || [],
+              cover_image: metadata.cover_image || '',
+              pubDate: metadata.pubDate || new Date().toISOString(),
+              updatedDate: metadata.updatedDate || metadata.pubDate || new Date().toISOString(),
+              featured: metadata.featured || false,
+              status: metadata.status || 'published',
+              author: metadata.author || { name: 'Playable Data Team' }
             };
           } catch (error) {
             console.error(`Error processing article ${file.name}:`, error);
@@ -132,10 +156,19 @@ export async function getAllArticles() {
         })
     );
     
-    return articles.filter(Boolean); // Remove any failed articles
+    const validArticles = articles.filter(Boolean); // Remove any failed articles
+    console.log(`Successfully processed ${validArticles.length} articles from storage`);
+    
+    // Sort articles by date, newest first
+    return validArticles.sort((a, b) => {
+      const dateA = new Date(a.pubDate);
+      const dateB = new Date(b.pubDate);
+      return dateB - dateA;
+    });
   } catch (error) {
     console.error('Error getting all articles:', error);
-    throw error;
+    console.warn('Returning empty array due to error in getAllArticles');
+    return [];
   }
 }
 

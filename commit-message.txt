@@ -1,11 +1,10 @@
-fix: update Supabase configuration to use service_role key
+fix: update blog post rendering to use Supabase storage bucket
 
-- Update Supabase URL and API key to use the correct project and service_role key
-- Enhance JWT validation to properly verify service_role credentials
-- Improve error handling for service_role authentication
-- Add utility function to detect service_role usage
-- Update client initialization with appropriate service_role settings
+- Modify getArticles function to fetch blog posts from 'articles' storage bucket
+- Enhance getAllArticles function with improved error handling and Markdown parsing
+- Update blog post template to render content from storage
+- Add support for Markdown frontmatter format with proper field mapping
+- Implement fallback options for missing data
 
-This change fixes the deployment errors by using a service_role key that
-bypasses Row Level Security (RLS) policies, allowing full access to the
-database during the build process. 
+This change ensures the blog site renders content from Markdown files stored 
+in the Supabase storage bucket rather than from a database table. 

@@ -1,5 +1,6 @@
 import { supabase } from '../db/supabase';
 import { DEFAULT_TOPICS } from './topics';
+import { getAllArticles as getArticlesFromStorage, getArticleContent, parseMarkdown } from './storage';
 
 // Mock data for when Supabase is not initialized
 const MOCK_ARTICLES = [
@@ -40,30 +41,39 @@ export async function getArticles() {
   
   try {
     // Double-check Supabase is actually a valid client before attempting the query
-    if (!supabase.from) {
+    if (!supabase.storage) {
       console.warn('Invalid Supabase client, using mock article data');
       return MOCK_ARTICLES;
     }
     
-    const { data, error } = await supabase
-      .from('articles')
-      .select('*')
-      .order('created_at', { ascending: false });
+    try {
+      // Fetch articles from storage bucket
+      const articles = await getArticlesFromStorage();
       
-    if (error) {
-      console.error('Error fetching articles:', error);
+      if (!articles || articles.length === 0) {
+        console.warn('No articles found in storage bucket, using mock data');
+        return MOCK_ARTICLES;
+      }
+      
+      // Format articles to match expected structure
+      return articles.map(article => ({
+        id: article.slug || `article-${Math.random().toString(36).substring(2, 11)}`,
+        slug: article.slug,
+        title: article.title,
+        description: article.description,
+        content: article.content,
+        cover_image: article.cover_image,
+        tags: article.tags || [],
+        topics: article.topics || article.tags || DEFAULT_TOPICS,
+        status: article.status || 'published',
+        created_at: article.pubDate || new Date().toISOString(),
+        updated_at: article.updatedDate || article.pubDate || new Date().toISOString(),
+        author: article.author || { name: 'Playable Data Team' }
+      }));
+    } catch (storageError) {
+      console.error('Error fetching articles from storage:', storageError);
       return MOCK_ARTICLES;
     }
-    
-    if (!data || data.length === 0) {
-      console.warn('No articles found in database, using mock data');
-      return MOCK_ARTICLES;
-    }
-    
-    return data.map(article => ({
-      ...article,
-      topics: article.topics || article.tags || DEFAULT_TOPICS
-    }));
   } catch (error) {
     console.error('Error in getArticles:', error);
     return MOCK_ARTICLES;
@@ -75,39 +85,63 @@ export async function getArticleById(id) {
   if (!supabase) {
     console.info('Supabase client not available, using mock article data for ID:', id);
     // Find a mock article with matching ID or return the first one
-    return MOCK_ARTICLES.find(article => article.id === id) || MOCK_ARTICLES[0];
+    return MOCK_ARTICLES.find(article => article.id === id || article.slug === id) || MOCK_ARTICLES[0];
   }
   
   try {
-    // Double-check Supabase is actually a valid client before attempting the query
-    if (!supabase.from) {
+    // Double-check Supabase is actually a valid client
+    if (!supabase.storage) {
       console.warn('Invalid Supabase client, using mock article data');
-      return MOCK_ARTICLES.find(article => article.id === id) || MOCK_ARTICLES[0];
+      return MOCK_ARTICLES.find(article => article.id === id || article.slug === id) || MOCK_ARTICLES[0];
     }
     
-    const { data, error } = await supabase
-      .from('articles')
-      .select('*')
-      .eq('id', id)
-      .single();
+    try {
+      // Assuming id might be a slug
+      const fileName = `${id}.md`;
       
-    if (error) {
-      console.error(`Error fetching article with id ${id}:`, error);
-      return MOCK_ARTICLES.find(article => article.id === id) || MOCK_ARTICLES[0];
+      // Get the article content from storage
+      const content = await getArticleContent(fileName);
+      
+      // Parse the markdown content
+      const { metadata, html } = parseMarkdown(content);
+      
+      // Format the article to match expected structure
+      return {
+        id: id,
+        slug: id,
+        title: metadata.title,
+        description: metadata.description,
+        content: html,
+        cover_image: metadata.cover_image,
+        tags: metadata.tags || [],
+        topics: metadata.topics || metadata.tags || DEFAULT_TOPICS,
+        status: metadata.status || 'published',
+        created_at: metadata.pubDate || new Date().toISOString(),
+        updated_at: metadata.updatedDate || metadata.pubDate || new Date().toISOString(),
+        author: metadata.author || { name: 'Playable Data Team' }
+      };
+    } catch (storageError) {
+      console.error(`Error fetching article ${id} from storage:`, storageError);
+      
+      // Fallback to getting all articles and finding the right one
+      try {
+        const allArticles = await getArticles();
+        const article = allArticles.find(article => article.id === id || article.slug === id);
+        
+        if (article) {
+          return article;
+        }
+        
+        console.warn(`Article with ID/slug "${id}" not found in storage or collection`);
+        return MOCK_ARTICLES[0];
+      } catch (fallbackError) {
+        console.error('Error in fallback article fetch:', fallbackError);
+        return MOCK_ARTICLES.find(article => article.id === id || article.slug === id) || MOCK_ARTICLES[0];
+      }
     }
-    
-    if (!data) {
-      console.warn(`No article found with id ${id}, using mock data`);
-      return MOCK_ARTICLES.find(article => article.id === id) || MOCK_ARTICLES[0];
-    }
-    
-    return {
-      ...data,
-      topics: data.topics || data.tags || DEFAULT_TOPICS
-    };
   } catch (error) {
     console.error(`Error in getArticleById for id ${id}:`, error);
-    return MOCK_ARTICLES.find(article => article.id === id) || MOCK_ARTICLES[0];
+    return MOCK_ARTICLES.find(article => article.id === id || article.slug === id) || MOCK_ARTICLES[0];
   }
 }
 

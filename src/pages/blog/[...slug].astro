@@ -1,19 +1,16 @@
 ---
 import Layout from '../../layouts/Layout.astro';
 import BlogPost from '../../layouts/BlogPost.astro';
-import { supabase } from '../../db/supabase';
+import { getArticles, getArticleById } from '../../utils/supabase';
 import { marked } from 'marked';
 
 export async function getStaticPaths() {
   try {
-    // Get all articles from database
-    const { data: articles, error } = await supabase
-      .from('articles')
-      .select('*')
-      .order('created_at', { ascending: false });
+    // Get all articles from storage (using our updated function)
+    const articles = await getArticles();
     
-    if (error) {
-      console.error("Error fetching articles:", error);
+    if (!articles || articles.length === 0) {
+      console.warn("No articles found, using placeholder");
       return [
         {
           params: { slug: 'placeholder' },
@@ -31,6 +28,7 @@ export async function getStaticPaths() {
       ];
     }
 
+    console.log(`Generating paths for ${articles.length} articles`);
     return articles.map(article => ({
       params: { slug: article.slug },
       props: { article },
@@ -56,10 +54,15 @@ export async function getStaticPaths() {
 }
 
 const { slug } = Astro.params;
+// @ts-ignore - Temporarily ignore TypeScript checking for article props
 const { article } = Astro.props;
 
-// Parse markdown content
-const htmlContent = article?.content ? marked.parse(article.content) : '';
+// The content should already be HTML from our storage processing
+const htmlContent = article?.content || '';
+
+// Date handling
+const pubDate = article.created_at || article.pubDate;
+const updatedDate = article.updated_at || article.updatedDate;
 ---
 
 <BlogPost post={{
@@ -67,16 +70,17 @@ const htmlContent = article?.content ? marked.parse(article.content) : '';
   data: {
     title: article.title,
     description: article.description,
-    pubDate: new Date(article.created_at),
-    updatedDate: article.updated_at ? new Date(article.updated_at) : undefined,
+    pubDate: new Date(pubDate),
+    updatedDate: updatedDate ? new Date(updatedDate) : undefined,
     coverImage: article.cover_image,
     author: {
-      name: article.author_name,
-      image: article.author_image
+      name: article.author?.name || article.author_name || 'Playable Data Team',
+      image: article.author?.image || article.author_image
     },
-    tags: article.tags
+    tags: article.tags || []
   },
   body: article.content
 }}>
+  <!-- @ts-ignore -->
   <div set:html={htmlContent} />
 </BlogPost>
