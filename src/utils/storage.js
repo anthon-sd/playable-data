@@ -338,3 +338,220 @@ export async function migrateContentToStorage(articles) {
     throw error;
   }
 }
+
+/**
+ * Get content from storage by slug
+ */
+export async function getContent(slug) {
+  try {
+    // Ensure storage is initialized
+    await initializeStorage();
+    
+    // File name is slug + .md
+    const fileName = `${slug}.md`;
+    
+    // Get file from storage
+    const { data, error } = await supabase.storage
+      .from(ARTICLES_BUCKET)
+      .download(fileName);
+      
+    if (error) {
+      console.error(`Error downloading content for ${slug}:`, error);
+      throw error;
+    }
+    
+    // Get file content
+    const content = await data.text();
+    
+    // Parse markdown with frontmatter
+    const { metadata, html, content: markdown } = parseMarkdown(content);
+    
+    // Get public URL
+    const { data: { publicUrl } } = supabase.storage
+      .from(ARTICLES_BUCKET)
+      .getPublicUrl(fileName);
+    
+    return {
+      slug,
+      fileName,
+      url: publicUrl,
+      content: markdown,
+      html,
+      metadata
+    };
+  } catch (error) {
+    console.error(`Error getting content for ${slug}:`, error);
+    throw error;
+  }
+}
+
+/**
+ * Delete content from storage by slug
+ */
+export async function deleteContent(slug) {
+  try {
+    // Ensure storage is initialized
+    await initializeStorage();
+    
+    // File name is slug + .md
+    const fileName = `${slug}.md`;
+    
+    // Delete file from storage
+    const { error } = await supabase.storage
+      .from(ARTICLES_BUCKET)
+      .remove([fileName]);
+      
+    if (error) {
+      console.error(`Error deleting content for ${slug}:`, error);
+      throw error;
+    }
+    
+    return true;
+  } catch (error) {
+    console.error(`Error deleting content for ${slug}:`, error);
+    throw error;
+  }
+}
+
+/**
+ * Upload content to storage
+ */
+export async function uploadContent(slug, content, metadata = {}) {
+  try {
+    // Ensure storage is initialized
+    await initializeStorage();
+    
+    // Create frontmatter
+    const frontmatterObj = {
+      title: metadata.title || slug,
+      description: metadata.description || '',
+      pubDate: metadata.pubDate || new Date().toISOString().split('T')[0],
+      ...(metadata.updatedDate ? { updatedDate: metadata.updatedDate } : {}),
+      ...(metadata.coverImage ? { coverImage: metadata.coverImage } : {}),
+      ...(metadata.author ? { author: metadata.author } : {}),
+      ...(metadata.tags && metadata.tags.length > 0 ? { tags: metadata.tags } : {})
+    };
+    
+    // Format frontmatter as YAML
+    const frontmatterStr = `---\n${Object.entries(frontmatterObj)
+      .map(([key, value]) => {
+        if (Array.isArray(value)) {
+          return `${key}: ${JSON.stringify(value)}`;
+        } else if (typeof value === 'object' && value !== null) {
+          return `${key}:\n  ${Object.entries(value)
+            .map(([k, v]) => `${k}: "${v}"`)
+            .join('\n  ')}`;
+        } else if (typeof value === 'string') {
+          return `${key}: "${value}"`;
+        } else {
+          return `${key}: ${value}`;
+        }
+      })
+      .join('\n')}
+---\n\n`;
+    
+    // Combine frontmatter and content
+    const fileContent = frontmatterStr + (content || '');
+    
+    // Create file name (slug + .md)
+    const fileName = `${slug}.md`;
+    
+    // Convert string to Blob
+    const blob = new Blob([fileContent], { type: 'text/markdown' });
+    const file = new File([blob], fileName, { type: 'text/markdown' });
+    
+    // Upload to storage
+    const { data, error } = await supabase.storage
+      .from(ARTICLES_BUCKET)
+      .upload(fileName, file, {
+        upsert: true // Overwrite if exists
+      });
+      
+    if (error) {
+      console.error(`Error uploading content "${slug}":`, error);
+      throw error;
+    }
+    
+    // Get public URL
+    const { data: { publicUrl } } = supabase.storage
+      .from(ARTICLES_BUCKET)
+      .getPublicUrl(fileName);
+    
+    return {
+      slug,
+      fileName,
+      url: publicUrl
+    };
+  } catch (error) {
+    console.error(`Error uploading content "${slug}":`, error);
+    throw error;
+  }
+}
+
+/**
+ * List media files in storage
+ */
+export async function listMedia(folder = '') {
+  try {
+    // Ensure storage is initialized
+    await initializeStorage();
+    
+    // List files in folder
+    const { data: files, error } = await supabase.storage
+      .from(MEDIA_BUCKET)
+      .list(folder);
+      
+    if (error) {
+      console.error(`Error listing media in folder "${folder}":`, error);
+      throw error;
+    }
+    
+    // Get public URLs for all files
+    const mediaFiles = files.map(file => {
+      const filePath = folder ? `${folder}/${file.name}` : file.name;
+      const { data: { publicUrl } } = supabase.storage
+        .from(MEDIA_BUCKET)
+        .getPublicUrl(filePath);
+        
+      return {
+        ...file,
+        path: filePath,
+        url: publicUrl
+      };
+    });
+    
+    return mediaFiles;
+  } catch (error) {
+    console.error(`Error listing media in folder "${folder}":`, error);
+    throw error;
+  }
+}
+
+/**
+ * Convert database article to storage format
+ */
+export function articleToStorageFormat(article) {
+  // Extract metadata for frontmatter
+  const metadata = {
+    title: article.title,
+    description: article.description || '',
+    pubDate: new Date(article.created_at).toISOString().split('T')[0],
+    ...(article.updated_at && article.updated_at !== article.created_at 
+      ? { updatedDate: new Date(article.updated_at).toISOString().split('T')[0] } 
+      : {}),
+    ...(article.cover_image ? { coverImage: article.cover_image } : {}),
+    ...(article.author_name ? { 
+      author: { 
+        name: article.author_name,
+        ...(article.author_image ? { image: article.author_image } : {})
+      } 
+    } : {}),
+    ...(article.tags && article.tags.length > 0 ? { tags: article.tags } : {})
+  };
+  
+  return {
+    slug: article.slug,
+    content: article.content || '',
+    metadata
+  };
+}
