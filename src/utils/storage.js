@@ -222,3 +222,119 @@ export async function listContent() {
     throw error;
   }
 }
+
+/**
+ * Migrate content from database to storage
+ * This function takes an array of database articles and converts them to markdown files
+ * stored in the Supabase Storage bucket
+ */
+export async function migrateContentToStorage(articles) {
+  try {
+    // Initialize storage
+    await initializeStorage();
+    
+    // Track results
+    const results = [];
+    
+    // Process each article
+    for (const article of articles) {
+      try {
+        // Create frontmatter
+        const frontmatter = {
+          title: article.title,
+          description: article.description || '',
+          pubDate: new Date(article.created_at).toISOString().split('T')[0],
+          ...(article.updated_at && article.updated_at !== article.created_at 
+            ? { updatedDate: new Date(article.updated_at).toISOString().split('T')[0] } 
+            : {}),
+          ...(article.cover_image ? { coverImage: article.cover_image } : {}),
+          ...(article.author_name ? { 
+            author: { 
+              name: article.author_name,
+              ...(article.author_image ? { image: article.author_image } : {})
+            } 
+          } : {}),
+          ...(article.tags && article.tags.length > 0 ? { tags: article.tags } : {})
+        };
+        
+        // Format frontmatter as YAML
+        const frontmatterStr = `---\n${Object.entries(frontmatter)
+          .map(([key, value]) => {
+            if (Array.isArray(value)) {
+              return `${key}: ${JSON.stringify(value)}`;
+            } else if (typeof value === 'object' && value !== null) {
+              return `${key}:\n  ${Object.entries(value)
+                .map(([k, v]) => `${k}: "${v}"`)
+                .join('\n  ')}`;
+            } else if (typeof value === 'string') {
+              return `${key}: "${value}"`;
+            } else {
+              return `${key}: ${value}`;
+            }
+          })
+          .join('\n')}
+---\n\n`;
+        
+        // Get content (if it exists)
+        const content = article.content || '';
+        
+        // Create file name (slug + .md)
+        const fileName = `${article.slug}.md`;
+        
+        // Combine frontmatter and content
+        const fileContent = frontmatterStr + content;
+        
+        // Convert string to Blob
+        const blob = new Blob([fileContent], { type: 'text/markdown' });
+        const file = new File([blob], fileName, { type: 'text/markdown' });
+        
+        // Check if file already exists
+        const { data: existingFiles } = await supabase.storage
+          .from(ARTICLES_BUCKET)
+          .list();
+          
+        const fileExists = existingFiles?.some(f => f.name === fileName);
+        
+        // Upload to storage
+        const { data, error } = await supabase.storage
+          .from(ARTICLES_BUCKET)
+          .upload(fileName, file, {
+            upsert: fileExists // Overwrite if exists
+          });
+          
+        if (error) {
+          throw error;
+        }
+        
+        // Get public URL
+        const { data: { publicUrl } } = supabase.storage
+          .from(ARTICLES_BUCKET)
+          .getPublicUrl(fileName);
+        
+        // Add to results
+        results.push({
+          slug: article.slug,
+          title: article.title,
+          status: 'success',
+          message: fileExists ? 'Updated in storage' : 'Migrated to storage',
+          url: publicUrl
+        });
+      } catch (error) {
+        console.error(`Error migrating article ${article.slug}:`, error);
+        
+        // Add error to results
+        results.push({
+          slug: article.slug,
+          title: article.title,
+          status: 'error',
+          message: error.message || 'Unknown error'
+        });
+      }
+    }
+    
+    return results;
+  } catch (error) {
+    console.error('Error migrating content to storage:', error);
+    throw error;
+  }
+}
