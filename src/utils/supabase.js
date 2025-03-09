@@ -92,3 +92,63 @@ export async function signOut() {
     return { error };
   }
 }
+
+/**
+ * Create a new article in the database
+ */
+export async function createArticle(articleData) {
+  try {
+    const { data, error } = await supabase
+      .from('articles')
+      .insert([{
+        ...articleData,
+        created_at: articleData.created_at || new Date().toISOString(),
+        updated_at: articleData.updated_at || new Date().toISOString()
+      }])
+      .select()
+      .single();
+      
+    if (error) {
+      console.error('Error creating article:', error);
+      throw error;
+    }
+    
+    return {
+      ...data,
+      topics: data.topics || data.tags || DEFAULT_TOPICS
+    };
+  } catch (error) {
+    console.error('Error creating article:', error);
+    throw error;
+  }
+}
+
+/**
+ * Update an existing article in the database
+ */
+export async function updateArticle(id, articleData) {
+  try {
+    const { data, error } = await supabase
+      .from('articles')
+      .update({
+        ...articleData,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', id)
+      .select()
+      .single();
+      
+    if (error) {
+      console.error(`Error updating article ${id}:`, error);
+      throw error;
+    }
+    
+    return {
+      ...data,
+      topics: data.topics || data.tags || DEFAULT_TOPICS
+    };
+  } catch (error) {
+    console.error(`Error updating article ${id}:`, error);
+    throw error;
+  }
+}
