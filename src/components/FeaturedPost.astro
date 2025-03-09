@@ -3,7 +3,10 @@ import { formatDate } from '../utils/date';
 
 const { post } = Astro.props;
 const { slug, data } = post;
-const { title, description, pubDate, coverImage, author, topics } = data;
+const { title, description, pubDate, coverImage, author, topics = [], tags = [] } = data;
+
+// Use topics if available, otherwise fall back to tags
+const postTopics = topics.length > 0 ? topics : tags;
 ---
 
 <article class="card card-hover relative overflow-hidden">
@@ -23,9 +26,9 @@ const { title, description, pubDate, coverImage, author, topics } = data;
     <div class="p-8 md:p-10 md:w-1/2 flex flex-col justify-center">
       <div class="uppercase tracking-wide text-sm text-highlight font-semibold mb-1">Featured Post</div>
       
-      {topics && topics.length > 0 && (
+      {postTopics && postTopics.length > 0 && (
         <div class="flex flex-wrap gap-2 mb-4">
-          {topics.slice(0, 3).map(topic => (
+          {postTopics.slice(0, 3).map(topic => (
             <a href={`/topics/${topic}/`} class="text-xs bg-tint-20 hover:bg-tint-50 text-dark-1 px-2 py-1 rounded-full transition">
               #{topic}
             </a>
@@ -46,9 +49,9 @@ const { title, description, pubDate, coverImage, author, topics } = data;
       <div class="flex items-center justify-between text-sm text-dark-2 mb-6">
         <div class="flex items-center gap-2">
           {author?.image && (
-            <img src={author.image} alt={author.name} class="w-8 h-8 rounded-full object-cover" />
+            <img src={author.image} alt={author.name || 'Author'} class="w-8 h-8 rounded-full object-cover" />
           )}
-          <span>{author?.name || 'Tech Blog Team'}</span>
+          <span>{author?.name || 'Playable Data Team'}</span>
         </div>
         
         <time datetime={pubDate.toISOString()}>{formatDate(pubDate)}</time>

@@ -10,24 +10,39 @@ import NewsletterSignup from '../components/NewsletterSignup.astro';
 let allPosts = [];
 try {
   allPosts = await getArticles();
+  console.log(`Loaded ${allPosts.length} articles for the homepage`);
 } catch (error) {
   console.error("Error fetching articles:", error);
   // Provide fallback data if database query fails
   allPosts = [];
 }
 
-const sortedPosts = allPosts.sort((a, b) => new Date(b.created_at).valueOf() - new Date(a.created_at).valueOf());
+// Sort posts by publication date (newest first)
+const sortedPosts = allPosts
+  .filter(post => post.status === 'published')
+  .sort((a, b) => {
+    // Use pubDate from markdown if available, otherwise fallback to created_at
+    const dateA = a.pubDate ? new Date(a.pubDate) : new Date(a.created_at);
+    const dateB = b.pubDate ? new Date(b.pubDate) : new Date(b.created_at);
+    return dateB.valueOf() - dateA.valueOf();
+  });
 
-// Get featured post
-const featuredPost = sortedPosts.find(post => post.featured);
+// First look for a post explicitly marked as featured
+let featuredPost = sortedPosts.find(post => post.featured === true);
 
-// Get remaining posts
+// If no post is explicitly marked as featured, use the most recent post
+if (!featuredPost && sortedPosts.length > 0) {
+  console.log('No explicitly featured post found, using most recent post');
+  featuredPost = sortedPosts[0];
+}
+
+// Get remaining posts (skip the featured one)
 const remainingPosts = featuredPost 
-  ? sortedPosts.filter(post => post !== featuredPost)
+  ? sortedPosts.filter(post => post.id !== featuredPost.id)
   : sortedPosts;
 
-// Get all unique tags
-const allTags = [...new Set(allPosts.flatMap(post => post.tags || []))].sort();
+// Get all unique topics and tags
+const allTopics = [...new Set(allPosts.flatMap(post => post.topics || post.tags || []))].sort();
 
 // Convert database articles to the format expected by components
 function convertArticleToPost(article) {
@@ -36,14 +51,15 @@ function convertArticleToPost(article) {
     data: {
       title: article.title,
       description: article.description,
-      pubDate: new Date(article.created_at),
-      updatedDate: article.updated_at ? new Date(article.updated_at) : undefined,
+      pubDate: article.pubDate ? new Date(article.pubDate) : new Date(article.created_at),
+      updatedDate: article.updatedDate ? new Date(article.updatedDate) : 
+                  article.updated_at ? new Date(article.updated_at) : undefined,
       coverImage: article.cover_image,
-      author: {
-        name: article.author_name,
+      author: article.author || {
+        name: article.author_name || 'Playable Data Team',
         image: article.author_image
       },
-      tags: article.tags,
+      topics: article.topics || article.tags || [],
       featured: article.featured
     }
   };
@@ -90,11 +106,11 @@ Join us as we break down industry trends, discuss strategies, and explore data-r
       <div class="md:w-1/4">
         <div class="card sticky top-24">
           <h2 class="text-xl font-bold text-black mb-4">Topics</h2>
-          {allTags.length > 0 ? (
+          {allTopics.length > 0 ? (
             <div class="flex flex-wrap gap-2">
-              {allTags.map(tag => (
-                <a href={`/topics/${tag}/`} class="text-sm bg-tint-20 hover:bg-tint-50 text-dark-1 px-3 py-1 rounded-full transition mb-2">
-                  #{tag}
+              {allTopics.map(topic => (
+                <a href={`/topics/${topic}/`} class="text-sm bg-tint-20 hover:bg-tint-50 text-dark-1 px-3 py-1 rounded-full transition mb-2">
+                  #{topic}
                 </a>
               ))}
             </div>

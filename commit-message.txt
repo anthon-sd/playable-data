@@ -8,4 +8,16 @@ fix: improve Markdown frontmatter parsing for blog posts
 - Update file handling to better detect matching filenames
 
 This change ensures blog posts with special characters in their frontmatter
-can be properly parsed and rendered from the Supabase storage bucket. 
+can be properly parsed and rendered from the Supabase storage bucket.
+
+fix: improve blog components to use Markdown metadata correctly
+
+- Update FeaturedPost and BlogCard components to handle both topics and tags
+- Ensure latest post is always used as featured if none are explicitly marked
+- Add better fallbacks for author information and other metadata
+- Fix sorting to use pubDate from Markdown frontmatter
+- Improve display of topics from the Markdown frontmatter
+- Update main page to properly filter for published posts only
+
+This change ensures the blog properly displays content and metadata from
+Markdown files stored in the Supabase storage bucket. 
