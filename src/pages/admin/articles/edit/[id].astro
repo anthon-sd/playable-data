@@ -5,6 +5,9 @@ import { marked } from 'marked';
 import RichTextEditor from '../../../../components/RichTextEditor.astro';
 import MediaLibrary from '../../../../components/MediaLibrary.astro';
 
+// Disable static pre-rendering for this route to enable server-side rendering
+export const prerender = false;
+
 // Get article ID from URL
 const { id } = Astro.params;
 
