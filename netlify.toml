@@ -9,8 +9,9 @@
 
 [build.environment]
   NODE_VERSION = "18"
-  PUBLIC_SUPABASE_URL = "https://gxhvwiwtmelfrxnwptrr.supabase.co"
-  PUBLIC_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd4aHZ3aXd0bWVsZnJ4bndwdHJyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MDY2MzA0OTEsImV4cCI6MjAyMjIwNjQ5MX0.Wd0jdhgKj0NbY0zEiTcbJ5ydXG_MFJsQGQBqzVfxQXo"
+  PUBLIC_SUPABASE_URL = "https://ganoqvjleaxfbcmzqaww.supabase.co"
+  PUBLIC_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdhbm9xdmpsZWF4ZmJjbXpxYXd3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDA2NDkxOTQsImV4cCI6MjA1NjIyNTE5NH0._WtlLkKLOuSG2MNkPFLqODOSdGePY6-ElS6Ne9M-viA"
+  SUPABASE_SERVICE_ROLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdhbm9xdmpsZWF4ZmJjbXpxYXd3Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0MDY0OTE5NCwiZXhwIjoyMDU2MjI1MTk0fQ.iKu9B2-Sy84eIS9FD7qolsjEdVSy4JVxdPBv8wrMtzk"
   SITE_URL = "https://playabledata.io"
 
 # This ensures that all routes are handled properly

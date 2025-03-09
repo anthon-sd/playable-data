@@ -1,7 +1,11 @@
 import { createClient } from "@supabase/supabase-js";
 
 const supabaseUrl = import.meta.env.PUBLIC_SUPABASE_URL;
+// Prioritize service role key for builds (Netlify) but fallback to anon key for client-side
+const supabaseServiceRoleKey = import.meta.env.SUPABASE_SERVICE_ROLE_KEY;
 const supabaseAnonKey = import.meta.env.PUBLIC_SUPABASE_ANON_KEY;
+// Use service role key if available (for builds), otherwise use anon key
+const supabaseKey = supabaseServiceRoleKey || supabaseAnonKey;
 
 // Check if the API key format is valid (basic format check)
 function isValidApiKey(key) {
@@ -28,11 +32,11 @@ let supabase = null;
 // Only attempt initialization if environment variables look valid
 if (supabaseUrl && 
     supabaseUrl.includes('supabase.co') && 
-    isValidApiKey(supabaseAnonKey)) {
+    isValidApiKey(supabaseKey)) {
   
   try {
     console.log('Initializing Supabase client with valid credentials');
-    supabase = createClient(supabaseUrl, supabaseAnonKey, {
+    supabase = createClient(supabaseUrl, supabaseKey, {
       auth: {
         persistSession: false, // Since we're running in SSG mode
         autoRefreshToken: false // No need to refresh for service_role
@@ -45,8 +49,12 @@ if (supabaseUrl &&
     
     // Log info about the key being used (but not the full key)
     try {
-      const payload = JSON.parse(atob(supabaseAnonKey.split('.')[1]));
+      const payload = JSON.parse(atob(supabaseKey.split('.')[1]));
       console.log(`Using Supabase ${payload.role} key for project ref: ${payload.ref}`);
+      
+      if (payload.role === 'service_role') {
+        console.log('Service role key detected - using elevated privileges for build');
+      }
     } catch (e) {
       // Silent catch - just for logging
     }
