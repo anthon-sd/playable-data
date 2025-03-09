@@ -199,3 +199,26 @@ export async function deleteMedia(path) {
     throw error;
   }
 }
+
+/**
+ * List all content files in the articles bucket
+ */
+export async function listContent() {
+  try {
+    await initializeStorage();
+    
+    const { data: files, error } = await supabase.storage
+      .from(ARTICLES_BUCKET)
+      .list();
+      
+    if (error) {
+      console.error('Error listing content:', error);
+      throw error;
+    }
+    
+    return files.filter(file => file.name.endsWith('.md'));
+  } catch (error) {
+    console.error('Error listing content:', error);
+    throw error;
+  }
+}
