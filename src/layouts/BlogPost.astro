@@ -103,15 +103,21 @@ const { title, description, pubDate, updatedDate, coverImage, author, tags } = p
         </div>
       </article>
 
-      <!-- Sidebar column -->
-      <div class="lg:col-span-4 mt-12 lg:mt-0">
-        <SidebarNewsletter />
+      <!-- Sidebar column with mid-level positioning -->
+      <div class="lg:col-span-4 mt-12 lg:mt-0 lg:flex lg:flex-col">
+        <!-- Empty space to push the newsletter to mid-level -->
+        <div class="hidden lg:block lg:h-[300px]"></div>
+        
+        <!-- Sticky sidebar newsletter -->
+        <div class="lg:sticky lg:top-24">
+          <SidebarNewsletter />
+        </div>
       </div>
     </div>
   </div>
   
-  <!-- Full-width newsletter at the bottom (shown on mobile only) -->
-  <div class="mt-16 lg:hidden">
+  <!-- Full-width newsletter at the bottom (shown on all screen sizes) -->
+  <div class="mt-16">
     <NewsletterSignup />
   </div>
 </Layout>
