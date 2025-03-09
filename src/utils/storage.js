@@ -131,10 +131,11 @@ export function parseMarkdown(content) {
     // Check for known problematic patterns in frontmatter
     const hasTitleWithColon = /^title:.*?:.*?$/m.test(content);
     const hasDescriptionWithColon = /^description:.*?:.*?$/m.test(content);
+    const hasAuthor = /^author:[\s\S]*?\n[^\s]/m.test(content);
     
-    // If we detect problematic patterns, use our custom parser
-    if (hasTitleWithColon || hasDescriptionWithColon) {
-      console.log('Detected YAML with special characters, using custom parser');
+    // If we detect problematic patterns or an author field, use our custom parser
+    if (hasTitleWithColon || hasDescriptionWithColon || hasAuthor) {
+      console.log('Detected YAML with special characters or nested objects, using custom parser');
       
       // Extract frontmatter between --- delimiters
       const frontmatterMatch = content.match(/^---\r?\n([\s\S]*?)\r?\n---/);
@@ -194,9 +195,26 @@ export function parseMarkdown(content) {
             if (nestedMatch) {
               const nestedKey = nestedMatch[1].trim();
               const nestedValue = nestedMatch[2].trim();
-              metadata[currentKey][nestedKey] = nestedValue;
-            } else {
-              // End of multiline
+              
+              // Handle nested values with special characters by keeping quotes
+              if (nestedValue.startsWith('"') && nestedValue.endsWith('"')) {
+                metadata[currentKey][nestedKey] = nestedValue.substring(1, nestedValue.length - 1);
+              } else {
+                metadata[currentKey][nestedKey] = nestedValue;
+              }
+              
+              // Special debug for author fields
+              if (currentKey === 'author') {
+                console.log(`Parsed author.${nestedKey} = ${nestedValue}`);
+                // Make sure image URLs are preserved exactly as written
+                if (nestedKey === 'image' && nestedValue.includes('://')) {
+                  console.log(`Found author image URL: ${nestedValue}`);
+                  // Strip any quotes that may have been added
+                  metadata[currentKey][nestedKey] = nestedValue.replace(/^["']|["']$/g, '');
+                }
+              }
+            } else if (!line.trim().startsWith('-')) {
+              // End of multiline if not a list item (starting with -)
               inMultiline = false;
             }
           }
@@ -206,6 +224,11 @@ export function parseMarkdown(content) {
         if (metadata.author && typeof metadata.author === 'string') {
           // If author is a string, convert it to an object with name property
           metadata.author = { name: metadata.author };
+        }
+        
+        // Additional check for author as an object
+        if (metadata.author && typeof metadata.author === 'object') {
+          console.log('Author object found in frontmatter:', JSON.stringify(metadata.author, null, 2));
         }
         
         // Get the content part (everything after frontmatter)
@@ -228,6 +251,11 @@ export function parseMarkdown(content) {
     
     // Use matter with default options
     const { data: frontmatter, content: markdown } = matter(preprocessedContent);
+    
+    // Additional logging for debugging author image
+    if (frontmatter.author && typeof frontmatter.author === 'object' && frontmatter.author.image) {
+      console.log(`Standard parser found author image: ${frontmatter.author.image}`);
+    }
     
     // Handle special case for author field which might need normalization
     if (frontmatter.author && typeof frontmatter.author === 'string') {
@@ -264,26 +292,57 @@ export function parseMarkdown(content) {
  * @returns {Object} - Normalized author object with name and optional image
  */
 function normalizeAuthor(author) {
+  // For debugging
+  console.log('Normalizing author data:', JSON.stringify(author));
+  
+  // Default image URL to use when none is specified
+  const defaultImage = '/images/default-avatar.svg'; // Using existing default avatar
+  
   if (!author) {
-    return { name: 'Playable Data Team' };
+    console.log('No author provided, using default');
+    return { 
+      name: 'Playable Data Team',
+      image: defaultImage 
+    };
   }
   
   // If author is a string, convert to object
   if (typeof author === 'string') {
-    return { name: author };
+    console.log('Author is string, converting to object');
+    return { 
+      name: author,
+      image: defaultImage 
+    };
   }
   
   // If author is already an object with a name property, use it
   if (typeof author === 'object' && author.name) {
+    // Log the author image if present
+    if (author.image) {
+      console.log(`Author ${author.name} has specified image URL: ${author.image}`);
+    } else if (author.avatar) {
+      console.log(`Author ${author.name} has specified avatar URL: ${author.avatar}`);
+    } else if (author.picture) {
+      console.log(`Author ${author.name} has specified picture URL: ${author.picture}`);
+    } else {
+      console.log(`Author ${author.name} has no image specified, using default: ${defaultImage}`);
+    }
+    
+    const authorImage = author.image || author.avatar || author.picture || defaultImage;
+    
     return {
       name: author.name,
-      image: author.image || author.avatar || author.picture || null,
+      image: authorImage,
       id: author.id || null
     };
   }
   
   // Default fallback
-  return { name: 'Playable Data Team' };
+  console.log('Author data invalid, using default');
+  return { 
+    name: 'Playable Data Team',
+    image: defaultImage 
+  };
 }
 
 /**
@@ -296,6 +355,23 @@ export async function getAllArticles() {
       console.warn('Supabase not initialized, cannot list articles');
       return [];
     }
+    
+    // Test our author image parsing with a sample markdown
+    const testMarkdown = `---
+title: Test Article with Author Image
+description: This is a test article to verify author image handling
+pubDate: 2023-06-15
+author:
+  name: Test Author
+  image: https://example.com/test-author-image.jpg
+  id: test123
+tags: [test, image]
+---
+
+# Test Article`;
+
+    console.log('Running author image parsing test...');
+    testAuthorImageParsing(testMarkdown);
     
     await initializeStorage();
     
@@ -328,17 +404,23 @@ export async function getAllArticles() {
           // Parse the markdown content with frontmatter
           const { metadata, html } = parseMarkdown(content);
           
-          // For debugging, log the metadata structure including author
-          console.log(`Article ${file.name} metadata:`, JSON.stringify({
-            title: metadata.title,
-            author: metadata.author
-          }));
+          // Special debug logging for monetization article
+          if (file.name.includes('Monetisation')) {
+            console.log('MONETIZATION ARTICLE FOUND!');
+            console.log('Raw metadata:', JSON.stringify(metadata, null, 2));
+            console.log('Author from metadata:', JSON.stringify(metadata.author, null, 2));
+          }
           
           // Generate a slug from the filename (removing .md extension)
           const slug = file.name.replace(/\.md$/, '');
           
           // Normalize author information
           const normalizedAuthor = normalizeAuthor(metadata.author);
+          
+          // Additional debug for monetization article
+          if (file.name.includes('Monetisation')) {
+            console.log('Normalized author:', JSON.stringify(normalizedAuthor, null, 2));
+          }
           
           // Ensure required fields exist with sensible defaults
           return {
@@ -673,172 +755,29 @@ export async function deleteContent(slug) {
 }
 
 /**
- * Upload content to storage
+ * Test function to verify author image parsing
+ * @param {string} markdownContent - Raw markdown content to test
  */
-export async function uploadContent(slug, content, metadata = {}) {
-  try {
-    // Ensure storage is initialized
-    await initializeStorage();
-    
-    // Create frontmatter
-    const frontmatterObj = {
-      title: metadata.title || slug,
-      description: metadata.description || '',
-      pubDate: metadata.pubDate || new Date().toISOString().split('T')[0],
-      ...(metadata.updatedDate ? { updatedDate: metadata.updatedDate } : {}),
-      ...(metadata.coverImage ? { coverImage: metadata.coverImage } : {}),
-      ...(metadata.author ? { author: metadata.author } : {}),
-      ...(metadata.tags && metadata.tags.length > 0 ? { tags: metadata.tags } : {})
-    };
-    
-    // Format frontmatter as YAML
-    const frontmatterStr = `---\n${Object.entries(frontmatterObj)
-      .map(([key, value]) => {
-        if (Array.isArray(value)) {
-          return `${key}: ${JSON.stringify(value)}`;
-        } else if (typeof value === 'object' && value !== null) {
-          return `${key}:\n  ${Object.entries(value)
-            .map(([k, v]) => `${k}: "${v}"`)
-            .join('\n  ')}`;
-        } else if (typeof value === 'string') {
-          return `${key}: "${value}"`;
-        } else {
-          return `${key}: ${value}`;
-        }
-      })
-      .join('\n')}
----\n\n`;
-    
-    // Combine frontmatter and content
-    const fileContent = frontmatterStr + (content || '');
-    
-    // Create file name (slug + .md)
-    const fileName = `${slug}.md`;
-    
-    // Convert string to Blob
-    const blob = new Blob([fileContent], { type: 'text/markdown' });
-    const file = new File([blob], fileName, { type: 'text/markdown' });
-    
-    // Upload to storage
-    const { data, error } = await supabase.storage
-      .from(ARTICLES_BUCKET)
-      .upload(fileName, file, {
-        upsert: true // Overwrite if exists
-      });
-      
-    if (error) {
-      console.error(`Error uploading content "${slug}":`, error);
-      throw error;
-    }
-    
-    // Get public URL
-    const { data: { publicUrl } } = supabase.storage
-      .from(ARTICLES_BUCKET)
-      .getPublicUrl(fileName);
-    
-    return {
-      slug,
-      fileName,
-      url: publicUrl
-    };
-  } catch (error) {
-    console.error(`Error uploading content "${slug}":`, error);
-    throw error;
+export function testAuthorImageParsing(markdownContent) {
+  console.log('=== TESTING AUTHOR IMAGE PARSING ===');
+  const { metadata } = parseMarkdown(markdownContent);
+  
+  console.log('Raw parsed metadata author:', JSON.stringify(metadata.author, null, 2));
+  
+  const normalizedAuthor = normalizeAuthor(metadata.author);
+  console.log('Normalized author:', JSON.stringify(normalizedAuthor, null, 2));
+  
+  if (normalizedAuthor.image && normalizedAuthor.image.includes('://')) {
+    console.log('✅ SUCCESS: Author image URL was correctly preserved:', normalizedAuthor.image);
+  } else if (normalizedAuthor.image === '/images/default-avatar.svg') {
+    console.log('❌ FAILED: Using default image instead of author image from markdown');
+  } else {
+    console.log('❓ UNKNOWN: Author image result:', normalizedAuthor.image);
   }
-}
-
-/**
- * List media files in storage
- */
-export async function listMedia(folder = '') {
-  try {
-    // If Supabase is not initialized, return empty array
-    if (!supabase) {
-      console.warn('Supabase not initialized, cannot list media');
-      return [];
-    }
-    
-    // List buckets to check if media bucket exists
-    try {
-      const { data: buckets, error: bucketsError } = await supabase.storage.listBuckets();
-      
-      if (bucketsError) {
-        console.error('Error listing buckets:', bucketsError);
-        return [];
-      }
-      
-      // If media bucket doesn't exist, return empty array
-      if (!buckets?.find(bucket => bucket.name === MEDIA_BUCKET)) {
-        console.warn(`Media bucket "${MEDIA_BUCKET}" not found`);
-        return [];
-      }
-      
-      // List files in folder
-      const { data, error } = await supabase.storage
-        .from(MEDIA_BUCKET)
-        .list(folder);
-      
-      if (error) {
-        console.error(`Error listing media in folder "${folder}":`, error);
-        return [];
-      }
-      
-      // Map files to add URLs
-      const mediaWithUrls = await Promise.all(data.map(async (file) => {
-        if (file.name === '.emptyFolderPlaceholder') return null;
-        
-        try {
-          const { data: url } = supabase.storage
-            .from(MEDIA_BUCKET)
-            .getPublicUrl(`${folder ? `${folder}/` : ''}${file.name}`);
-          
-          return {
-            ...file,
-            url: url?.publicUrl || ''
-          };
-        } catch (urlError) {
-          console.error(`Error getting URL for file "${file.name}":`, urlError);
-          return null;
-        }
-      }));
-      
-      // Filter out null values
-      return mediaWithUrls.filter(Boolean);
-    } catch (innerError) {
-      console.error('Error in storage operations:', innerError);
-      return [];
-    }
-  } catch (error) {
-    console.error('Error listing media:', error);
-    return [];
-  }
-}
-
-/**
- * Convert database article to storage format
- */
-export function articleToStorageFormat(article) {
-  // Extract metadata for frontmatter
-  const metadata = {
-    title: article.title,
-    description: article.description || '',
-    pubDate: new Date(article.created_at).toISOString().split('T')[0],
-    ...(article.updated_at && article.updated_at !== article.created_at 
-      ? { updatedDate: new Date(article.updated_at).toISOString().split('T')[0] } 
-      : {}),
-    ...(article.cover_image ? { coverImage: article.cover_image } : {}),
-    ...(article.author_name ? { 
-      author: { 
-        name: article.author_name,
-        ...(article.author_image ? { image: article.author_image } : {})
-      } 
-    } : {}),
-    ...(article.tags && article.tags.length > 0 ? { tags: article.tags } : {})
-  };
+  console.log('==============================');
   
   return {
-    slug: article.slug,
-    content: article.content || '',
-    metadata
+    rawAuthor: metadata.author,
+    normalizedAuthor
   };
 }

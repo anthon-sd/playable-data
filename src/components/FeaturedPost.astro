@@ -13,7 +13,7 @@ const postTopics = topics.length > 0 ? topics : tags;
   <div class="md:flex">
     {coverImage && (
       <div class="md:flex-shrink-0 md:w-1/2">
-        <a href={`/blog/${slug}/`} class="block h-64 md:h-full">
+        <a href={`/blog/${slug}/`} class="block h-72 md:h-full">
           <img 
             src={coverImage} 
             alt={`Cover image for ${title}`} 
@@ -23,12 +23,12 @@ const postTopics = topics.length > 0 ? topics : tags;
       </div>
     )}
     
-    <div class="p-8 md:p-10 md:w-1/2 flex flex-col justify-center">
+    <div class="p-6 md:p-8 md:w-1/2 flex flex-col justify-center">
       <div class="uppercase tracking-wide text-sm text-highlight font-semibold mb-1">Featured Post</div>
       
       {postTopics && postTopics.length > 0 && (
         <div class="flex flex-wrap gap-2 mb-4">
-          {postTopics.slice(0, 3).map(topic => (
+          {postTopics.slice(0, 3).map((topic: string) => (
             <a href={`/topics/${topic}/`} class="text-xs bg-tint-20 hover:bg-tint-50 text-dark-1 px-2 py-1 rounded-full transition">
               #{topic}
             </a>

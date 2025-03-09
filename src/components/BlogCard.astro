@@ -11,7 +11,7 @@ const postTopics = topics.length > 0 ? topics : tags;
 
 <article class="card card-hover p-0 overflow-hidden">
   {coverImage && (
-    <a href={`/blog/${slug}/`} class="block overflow-hidden h-48">
+    <a href={`/blog/${slug}/`} class="block overflow-hidden h-56">
       <img 
         src={coverImage} 
         alt={`Cover image for ${title}`} 
@@ -20,10 +20,10 @@ const postTopics = topics.length > 0 ? topics : tags;
     </a>
   )}
   
-  <div class="p-6">
+  <div class="p-4">
     {postTopics && postTopics.length > 0 && (
       <div class="flex flex-wrap gap-2 mb-3">
-        {postTopics.slice(0, 3).map(topic => (
+        {postTopics.slice(0, 3).map((topic: string) => (
           <a href={`/topics/${topic}/`} class="text-xs bg-tint-20 hover:bg-tint-50 text-dark-1 px-2 py-1 rounded-full transition">
             #{topic}
           </a>

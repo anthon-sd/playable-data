@@ -6,21 +6,39 @@ import NewsletterSignup from '../components/NewsletterSignup.astro';
 import SidebarNewsletter from '../components/SidebarNewsletter.astro';
 
 interface Props {
-  post: CollectionEntry<'blog'>;
+  post: {
+    slug: string;
+    data: {
+      title: string;
+      description?: string;
+      pubDate: Date;
+      updatedDate?: Date;
+      coverImage?: string;
+      author?: {
+        name: string;
+        image?: string;
+      };
+      tags?: string[];
+    };
+    body?: string;
+  };
 }
 
 const { post } = Astro.props;
 const { title, description, pubDate, updatedDate, coverImage, author, tags } = post.data;
+
+// Ensure author has default values if not provided
+const authorName = author?.name || 'Playable Data Team';
+const authorImage = author?.image || '/images/default-avatar.svg';
 ---
 
 <Layout title={title} description={description}>
   <div class="container-custom py-12">
-    <!-- Two-column layout with main content and sidebar -->
-    <div class="lg:grid lg:grid-cols-12 lg:gap-8">
-      <!-- Main content column -->
-      <article class="lg:col-span-8">
+    <!-- Single column layout -->
+    <div class="max-w-4xl mx-auto">
+      <article>
         <div class="mb-8">
-          {tags && (
+          {tags && tags.length > 0 && (
             <div class="flex flex-wrap gap-2 mb-4">
               {tags.map((tag: string) => (
                 <a href={`/topics/${tag}`} class="text-sm bg-tint-20 hover:bg-tint-50 text-dark-1 px-3 py-1 rounded-full transition">
@@ -37,14 +55,13 @@ const { title, description, pubDate, updatedDate, coverImage, author, tags } = p
           )}
           
           <div class="flex items-center gap-4 text-dark-2">
-            {author && (
-              <div class="flex items-center gap-2">
-                {author.image && (
-                  <img src={author.image} alt={author.name} class="w-10 h-10 rounded-full object-cover" />
-                )}
-                <span>{author.name}</span>
-              </div>
-            )}
+            <!-- Author information section -->
+            <div class="flex items-center gap-2">
+              {authorImage && (
+                <img src={authorImage} alt={authorName} class="w-10 h-10 rounded-full object-cover bg-gray-100" />
+              )}
+              <span class="font-medium">{authorName}</span>
+            </div>
             
             <div class="flex items-center gap-1">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -102,21 +119,10 @@ const { title, description, pubDate, updatedDate, coverImage, author, tags } = p
           </div>
         </div>
       </article>
-
-      <!-- Sidebar column with mid-level positioning -->
-      <div class="lg:col-span-4 mt-12 lg:mt-0 lg:flex lg:flex-col">
-        <!-- Empty space to push the newsletter to mid-level -->
-        <div class="hidden lg:block lg:h-[300px]"></div>
-        
-        <!-- Sidebar newsletter (non-sticky) -->
-        <div>
-          <SidebarNewsletter />
-        </div>
-      </div>
     </div>
   </div>
   
-  <!-- Full-width newsletter at the bottom (shown on all screen sizes) -->
+  <!-- Full-width newsletter at the bottom -->
   <div class="mt-16">
     <NewsletterSignup />
   </div>

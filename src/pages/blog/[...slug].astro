@@ -63,6 +63,29 @@ const htmlContent = article?.content || '';
 // Date handling
 const pubDate = article.created_at || article.pubDate;
 const updatedDate = article.updated_at || article.updatedDate;
+
+// Special override for the Monetisation article
+let authorName = 'Playable Data Team';
+let authorImage = null;
+
+if (article.slug && article.slug.includes('Mastering-Monetisation')) {
+  console.log('*** APPLYING MONETISATION ARTICLE OVERRIDE ***');
+  authorName = 'Anthon Fynn-Williams';
+  authorImage = 'https://ganoqvjleaxfbcmzqaww.supabase.co/storage/v1/object/sign/media/SHZ06184.jpg?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1cmwiOiJtZWRpYS9TSFowNjE4NC5qcGciLCJpYXQiOjE3NDE0NzYyMjAsImV4cCI6NDg5NTA3NjIyMH0.sUTi8l0v3B7JPnjDcapZGbnAFMfVxVadNDyZLJsGddQ';
+} else if (article.author && typeof article.author === 'object' && article.author.name) {
+  authorName = article.author.name;
+  authorImage = article.author.image || null;
+} else if (article.author_name) {
+  authorName = article.author_name;
+  authorImage = article.author_image || null;
+}
+
+// Debug output
+console.log('Article slug:', article.slug);
+console.log('Using author name:', authorName);
+console.log('Using author image:', authorImage);
+
+// @ts-ignore - Suppress TypeScript errors for article properties
 ---
 
 <BlogPost post={{
@@ -74,8 +97,8 @@ const updatedDate = article.updated_at || article.updatedDate;
     updatedDate: updatedDate ? new Date(updatedDate) : undefined,
     coverImage: article.cover_image,
     author: {
-      name: article.author?.name || article.author_name || 'Playable Data Team',
-      image: article.author?.image || article.author_image
+      name: authorName,
+      image: authorImage
     },
     tags: article.tags || []
   },
