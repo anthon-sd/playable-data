@@ -5,6 +5,7 @@ import { formatDate } from '../utils/date';
 import FeaturedPost from '../components/FeaturedPost.astro';
 import BlogCard from '../components/BlogCard.astro';
 import NewsletterSignup from '../components/NewsletterSignup.astro';
+import SidebarNewsletter from '../components/SidebarNewsletter.astro';
 
 // Get all blog posts sorted by date
 let allPosts = [];
@@ -98,7 +99,13 @@ function convertArticleToPost(article) {
 
       <!-- Sidebar -->
       <div class="md:w-1/4">
-        <div class="card sticky top-24">
+        <!-- Newsletter (static placement) -->
+        <div class="mb-8">
+          <SidebarNewsletter />
+        </div>
+        
+        <!-- Topics (with sticky behavior - positioned with enough space below navigation bar) -->
+        <div class="card sticky top-20">
           <h2 class="text-xl font-bold text-black mb-4">Topics</h2>
           {allTags.length > 0 ? (
             <div class="flex flex-wrap gap-2">
