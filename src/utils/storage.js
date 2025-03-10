@@ -132,10 +132,12 @@ export function parseMarkdown(content) {
     const hasTitleWithColon = /^title:.*?:.*?$/m.test(content);
     const hasDescriptionWithColon = /^description:.*?:.*?$/m.test(content);
     const hasAuthor = /^author:[\s\S]*?\n[^\s]/m.test(content);
+    const hasAuthorImage = /author:[\s\S]*?image:.*?:\/\//m.test(content);
+    const hasDirectAuthorImage = /^author_image:.*?:\/\//m.test(content);
     
     // If we detect problematic patterns or an author field, use our custom parser
-    if (hasTitleWithColon || hasDescriptionWithColon || hasAuthor) {
-      console.log('Detected YAML with special characters or nested objects, using custom parser');
+    if (hasTitleWithColon || hasDescriptionWithColon || hasAuthor || hasAuthorImage || hasDirectAuthorImage) {
+      console.log('Detected YAML with special characters, nested objects, or image URLs, using custom parser');
       
       // Extract frontmatter between --- delimiters
       const frontmatterMatch = content.match(/^---\r?\n([\s\S]*?)\r?\n---/);
@@ -187,6 +189,14 @@ export function parseMarkdown(content) {
             // Regular string value
             else {
               metadata[currentKey] = currentValue;
+              
+              // Special handling for direct author_image field
+              if (currentKey === 'author_image' && currentValue.includes('://')) {
+                console.log(`Found direct author_image URL: ${currentValue}`);
+                // Strip any quotes that may have been added
+                metadata[currentKey] = currentValue.replace(/^["']|["']$/g, '');
+                console.log(`Preserved author_image URL as: ${metadata[currentKey]}`);
+              }
             }
           } 
           // Handle multiline values (like nested objects)
@@ -207,10 +217,21 @@ export function parseMarkdown(content) {
               if (currentKey === 'author') {
                 console.log(`Parsed author.${nestedKey} = ${nestedValue}`);
                 // Make sure image URLs are preserved exactly as written
-                if (nestedKey === 'image' && nestedValue.includes('://')) {
+                if (nestedKey === 'image') {
                   console.log(`Found author image URL: ${nestedValue}`);
-                  // Strip any quotes that may have been added
-                  metadata[currentKey][nestedKey] = nestedValue.replace(/^["']|["']$/g, '');
+                  // Always strip quotes from the URL
+                  const cleanUrl = nestedValue.replace(/^["']|["']$/g, '');
+                  metadata[currentKey][nestedKey] = cleanUrl;
+                  
+                  // Extra logging to verify the URL is preserved correctly
+                  console.log(`Preserved author image URL as: ${metadata[currentKey][nestedKey]}`);
+                  
+                  // Extra check for Supabase URLs with tokens to ensure they're preserved correctly
+                  if (cleanUrl.includes('supabase.co') || cleanUrl.includes('token=')) {
+                    console.log('⚠️ DETECTED SUPABASE URL WITH TOKEN - ensuring it is preserved');
+                    // Store in an additional property for later verification
+                    metadata[currentKey]['_raw_image_url'] = cleanUrl;
+                  }
                 }
               }
             } else if (!line.trim().startsWith('-')) {
@@ -255,6 +276,12 @@ export function parseMarkdown(content) {
     // Additional logging for debugging author image
     if (frontmatter.author && typeof frontmatter.author === 'object' && frontmatter.author.image) {
       console.log(`Standard parser found author image: ${frontmatter.author.image}`);
+      
+      // Ensure image URL is preserved exactly as it appears in the frontmatter
+      if (frontmatter.author.image.includes('://')) {
+        console.log('Preserving full image URL from standard parser');
+        frontmatter.author.image = frontmatter.author.image.replace(/^["']|["']$/g, '');
+      }
     }
     
     // Handle special case for author field which might need normalization
@@ -291,34 +318,60 @@ export function parseMarkdown(content) {
  * @param {any} author - The author information which might be in different formats
  * @returns {Object} - Normalized author object with name and optional image
  */
-function normalizeAuthor(author) {
+function normalizeAuthor(author, metadata = {}) {
   // For debugging
   console.log('Normalizing author data:', JSON.stringify(author));
+  console.log('Additional metadata:', JSON.stringify(metadata));
   
   // Default image URL to use when none is specified
   const defaultImage = '/images/default-avatar.svg'; // Using existing default avatar
+  
+  // Check for separate author_image field in metadata
+  const authorImageFromMetadata = metadata.author_image || null;
+  if (authorImageFromMetadata) {
+    console.log(`Found separate author_image field: ${authorImageFromMetadata}`);
+  }
+  
+  // Check for author_id in metadata
+  const authorIdFromMetadata = metadata.author_id || null;
+  if (authorIdFromMetadata) {
+    console.log(`Found separate author_id field: ${authorIdFromMetadata}`);
+  }
   
   if (!author) {
     console.log('No author provided, using default');
     return { 
       name: 'Playable Data Team',
-      image: defaultImage 
+      image: authorImageFromMetadata || defaultImage,
+      id: authorIdFromMetadata || 'default'
     };
   }
   
   // If author is a string, convert to object
   if (typeof author === 'string') {
-    console.log('Author is string, converting to object');
+    console.log('Author is string, converting to object with name:', author);
     return { 
       name: author,
-      image: defaultImage 
+      image: authorImageFromMetadata || defaultImage,
+      id: authorIdFromMetadata || 'author-' + author.toLowerCase().replace(/\s+/g, '-')
     };
   }
   
   // If author is already an object with a name property, use it
   if (typeof author === 'object' && author.name) {
-    // Log the author image if present
-    if (author.image) {
+    // Check for special raw image URL property first
+    if (author._raw_image_url && typeof author._raw_image_url === 'string') {
+      console.log(`⚠️ Found raw image URL in author data: ${author._raw_image_url}`);
+      author.image = author._raw_image_url;
+    }
+    
+    // Prioritize separate author_image field if available
+    const authorImage = authorImageFromMetadata || author.image || author.avatar || author.picture || defaultImage;
+    
+    // Log the author image source
+    if (authorImageFromMetadata) {
+      console.log(`Using separate author_image field for ${author.name}: ${authorImageFromMetadata}`);
+    } else if (author.image) {
       console.log(`Author ${author.name} has specified image URL: ${author.image}`);
     } else if (author.avatar) {
       console.log(`Author ${author.name} has specified avatar URL: ${author.avatar}`);
@@ -328,20 +381,21 @@ function normalizeAuthor(author) {
       console.log(`Author ${author.name} has no image specified, using default: ${defaultImage}`);
     }
     
-    const authorImage = author.image || author.avatar || author.picture || defaultImage;
+    // Final verification of the image URL
+    console.log(`Final author image for ${author.name}: ${authorImage}`);
     
     return {
       name: author.name,
       image: authorImage,
-      id: author.id || null
+      id: authorIdFromMetadata || author.id || 'author-' + author.name.toLowerCase().replace(/\s+/g, '-')
     };
   }
   
-  // Default fallback
-  console.log('Author data invalid, using default');
-  return { 
-    name: 'Playable Data Team',
-    image: defaultImage 
+  // Fallback for any other case
+  return {
+    name: typeof author === 'string' ? author : 'Playable Data Team',
+    image: authorImageFromMetadata || defaultImage,
+    id: authorIdFromMetadata || 'default'
   };
 }
 
@@ -361,16 +415,15 @@ export async function getAllArticles() {
 title: Test Article with Author Image
 description: This is a test article to verify author image handling
 pubDate: 2023-06-15
-author:
-  name: Test Author
-  image: https://example.com/test-author-image.jpg
-  id: test123
-tags: [test, image]
+author: Test Author
+author_id: test-123
+author_image: https://example.com/test-author-image.jpg
+topics: [test, image]
 ---
 
 # Test Article`;
 
-    console.log('Running author image parsing test...');
+    console.log('Running author image parsing test with new metadata format...');
     testAuthorImageParsing(testMarkdown);
     
     await initializeStorage();
@@ -405,7 +458,7 @@ tags: [test, image]
           const { metadata, html } = parseMarkdown(content);
           
           // Special debug logging for monetization article
-          if (file.name.includes('Monetisation')) {
+          if (file.name.includes('Monetisation') || file.name.includes('monetisation')) {
             console.log('MONETIZATION ARTICLE FOUND!');
             console.log('Raw metadata:', JSON.stringify(metadata, null, 2));
             console.log('Author from metadata:', JSON.stringify(metadata.author, null, 2));
@@ -415,10 +468,10 @@ tags: [test, image]
           const slug = file.name.replace(/\.md$/, '');
           
           // Normalize author information
-          const normalizedAuthor = normalizeAuthor(metadata.author);
+          const normalizedAuthor = normalizeAuthor(metadata.author, metadata);
           
           // Additional debug for monetization article
-          if (file.name.includes('Monetisation')) {
+          if (file.name.includes('Monetisation') || file.name.includes('monetisation')) {
             console.log('Normalized author:', JSON.stringify(normalizedAuthor, null, 2));
           }
           
@@ -429,14 +482,17 @@ tags: [test, image]
             title: metadata.title || file.name.replace(/\.md$/, '').replace(/-/g, ' '),
             description: metadata.description || '',
             content: html,
-            tags: metadata.tags || [],
+            tags: metadata.tags || metadata.topics || [],
             topics: metadata.topics || metadata.tags || [],
             cover_image: metadata.cover_image || '',
             pubDate: metadata.pubDate || new Date().toISOString(),
             updatedDate: metadata.updatedDate || metadata.pubDate || new Date().toISOString(),
             featured: metadata.featured || false,
             status: metadata.status || 'published',
-            author: normalizedAuthor
+            author: normalizedAuthor,
+            author_name: typeof metadata.author === 'string' ? metadata.author : normalizedAuthor.name,
+            author_id: metadata.author_id || normalizedAuthor.id,
+            author_image: metadata.author_image || normalizedAuthor.image
           };
         } catch (articleError) {
           // Log the error but don't halt processing of other articles
@@ -802,10 +858,15 @@ export function testAuthorImageParsing(markdownContent) {
   console.log('=== TESTING AUTHOR IMAGE PARSING ===');
   const { metadata } = parseMarkdown(markdownContent);
   
-  console.log('Raw parsed metadata author:', JSON.stringify(metadata.author, null, 2));
+  console.log('Raw parsed metadata:', JSON.stringify(metadata, null, 2));
   
-  const normalizedAuthor = normalizeAuthor(metadata.author);
+  const normalizedAuthor = normalizeAuthor(metadata.author, metadata);
   console.log('Normalized author:', JSON.stringify(normalizedAuthor, null, 2));
+  
+  // Check for separate author_image field
+  if (metadata.author_image && metadata.author_image.includes('://')) {
+    console.log('✅ SUCCESS: Found separate author_image field:', metadata.author_image);
+  }
   
   if (normalizedAuthor.image && normalizedAuthor.image.includes('://')) {
     console.log('✅ SUCCESS: Author image URL was correctly preserved:', normalizedAuthor.image);
@@ -817,7 +878,7 @@ export function testAuthorImageParsing(markdownContent) {
   console.log('==============================');
   
   return {
-    rawAuthor: metadata.author,
+    rawMetadata: metadata,
     normalizedAuthor
   };
 }

@@ -67,23 +67,40 @@ const updatedDate = article.updated_at || article.updatedDate;
 // Special override for the Monetisation article
 let authorName = 'Playable Data Team';
 let authorImage = null;
+let authorId = null;
 
 if (article.slug && article.slug.includes('Mastering-Monetisation')) {
   console.log('*** APPLYING MONETISATION ARTICLE OVERRIDE ***');
   authorName = 'Anthon Fynn-Williams';
+  authorId = 'pd-001';
   authorImage = 'https://ganoqvjleaxfbcmzqaww.supabase.co/storage/v1/object/sign/media/SHZ06184.jpg?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1cmwiOiJtZWRpYS9TSFowNjE4NC5qcGciLCJpYXQiOjE3NDE0NzYyMjAsImV4cCI6NDg5NTA3NjIyMH0.sUTi8l0v3B7JPnjDcapZGbnAFMfVxVadNDyZLJsGddQ';
+} else if (article.author_name && article.author_image) {
+  // Prefer direct author_name and author_image fields if available
+  authorName = article.author_name;
+  authorId = article.author_id || null;
+  authorImage = article.author_image;
+  console.log('Found direct author_name/author_image:', authorName, authorImage);
 } else if (article.author && typeof article.author === 'object' && article.author.name) {
   authorName = article.author.name;
-  authorImage = article.author.image || null;
-} else if (article.author_name) {
-  authorName = article.author_name;
-  authorImage = article.author_image || null;
+  authorId = article.author.id || null;
+  // Ensure we're using the image URL exactly as specified
+  authorImage = article.author.image;
+  console.log('Found author object with image:', authorImage);
+} else if (typeof article.author === 'string') {
+  authorName = article.author;
+  console.log('Found string author name:', authorName);
 }
 
 // Debug output
 console.log('Article slug:', article.slug);
 console.log('Using author name:', authorName);
+console.log('Using author ID:', authorId);
 console.log('Using author image:', authorImage);
+
+// Extra verification for author image URL
+if (authorImage && typeof authorImage === 'string' && authorImage.includes('://')) {
+  console.log('Verified author image URL is preserved:', authorImage);
+}
 
 // @ts-ignore - Suppress TypeScript errors for article properties
 ---
@@ -98,7 +115,8 @@ console.log('Using author image:', authorImage);
     coverImage: article.cover_image,
     author: {
       name: authorName,
-      image: authorImage
+      image: authorImage,
+      id: authorId
     },
     tags: article.tags || []
   },
