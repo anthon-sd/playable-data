@@ -31,9 +31,60 @@ const { title, description, pubDate, updatedDate, coverImage, author, tags } = p
 // Ensure author has default values if not provided
 const authorName = author?.name || 'Playable Data Team';
 const authorImage = author?.image || '/images/default-avatar.svg';
+
+// Prepare article data for dataLayer
+const articleData = {
+  slug: post.slug,
+  title,
+  author: {
+    name: authorName,
+    id: author?.id
+  },
+  tags,
+  pubDate
+};
 ---
 
 <Layout title={title} description={description}>
+  <!-- Add GTM article tracking -->
+  <script is:inline define:vars={{ articleData }}>
+    window.dataLayer = window.dataLayer || [];
+    dataLayer.push({
+      event: 'articleView',
+      articleTitle: articleData.title,
+      articleId: articleData.slug,
+      articleAuthor: articleData.author.name,
+      articleTags: articleData.tags || [],
+      articlePublishDate: articleData.pubDate ? new Date(articleData.pubDate).toISOString() : ''
+    });
+
+    // Set up scroll depth tracking
+    document.addEventListener('DOMContentLoaded', function() {
+      const scrollDepths = [25, 50, 75, 100];
+      let trackedDepths = [];
+      
+      function calculateScrollDepth() {
+        const windowHeight = window.innerHeight;
+        const documentHeight = document.documentElement.scrollHeight;
+        const scrollTop = window.scrollY;
+        
+        const scrollPercentage = Math.round((scrollTop / (documentHeight - windowHeight)) * 100);
+        
+        scrollDepths.forEach(depth => {
+          if (scrollPercentage >= depth && !trackedDepths.includes(depth)) {
+            trackedDepths.push(depth);
+            dataLayer.push({
+              event: 'scrollDepth',
+              scrollDepthValue: depth
+            });
+          }
+        });
+      }
+      
+      window.addEventListener('scroll', calculateScrollDepth);
+    });
+  </script>
+
   <div class="container-custom py-12">
     <!-- Single column layout -->
     <div class="max-w-4xl mx-auto">

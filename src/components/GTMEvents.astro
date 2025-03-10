@@ -1,0 +1,93 @@
+---
+// This component adds GTM event tracking scripts to the page
+---
+
+<script is:inline>
+  // Initialize dataLayer if it doesn't exist
+  window.dataLayer = window.dataLayer || [];
+
+  /**
+   * Core GTM tracking function
+   */
+  function trackEvent(eventName, eventParams = {}) {
+    if (!eventName) return;
+    
+    const eventData = {
+      event: eventName,
+      ...eventParams,
+      eventTimestamp: new Date().toISOString()
+    };
+    
+    window.dataLayer.push(eventData);
+  }
+
+  // Set up scroll depth tracking
+  document.addEventListener('DOMContentLoaded', function() {
+    // Track scroll depth
+    const scrollDepths = [25, 50, 75, 100];
+    let trackedDepths = [];
+    
+    function calculateScrollDepth() {
+      const windowHeight = window.innerHeight;
+      const documentHeight = document.documentElement.scrollHeight;
+      const scrollTop = window.scrollY;
+      
+      const scrollPercentage = Math.round((scrollTop / (documentHeight - windowHeight)) * 100);
+      
+      scrollDepths.forEach(depth => {
+        if (scrollPercentage >= depth && !trackedDepths.includes(depth)) {
+          trackedDepths.push(depth);
+          trackEvent('scrollDepth', { scrollDepthValue: depth });
+        }
+      });
+    }
+    
+    window.addEventListener('scroll', calculateScrollDepth);
+    
+    // Track time on page
+    const timeIntervals = [10, 30, 60, 120, 300]; // in seconds
+    let trackedIntervals = [];
+    let startTime = new Date();
+    
+    setInterval(function() {
+      const secondsOnPage = Math.floor((new Date() - startTime) / 1000);
+      
+      timeIntervals.forEach(interval => {
+        if (secondsOnPage >= interval && !trackedIntervals.includes(interval)) {
+          trackedIntervals.push(interval);
+          trackEvent('timeOnPage', { timeOnPageValue: interval });
+        }
+      });
+    }, 5000);
+    
+    // Track outbound links
+    document.querySelectorAll('a[href^="http"]').forEach(link => {
+      // Ignore links to the current domain
+      if (link.hostname === window.location.hostname) return;
+      
+      link.addEventListener('click', function() {
+        const url = this.getAttribute('href');
+        const linkText = this.textContent.trim() || '';
+        
+        trackEvent('outboundLinkClick', {
+          outboundUrl: url,
+          linkText: linkText
+        });
+      });
+    });
+    
+    // Track form submissions
+    document.querySelectorAll('form').forEach(form => {
+      form.addEventListener('submit', function() {
+        const formId = this.id || 'unnamed-form';
+        const formType = this.dataset.formType || 'general';
+        
+        trackEvent('formSubmission', {
+          formId,
+          formType,
+          formLocation: window.location.pathname
+        });
+      });
+    });
+  });
+</script> 

@@ -1,6 +1,7 @@
 ---
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
+import GTMEvents from '../components/GTMEvents.astro';
 import '../styles/stats-toolkit-theme.css';
 
 export interface Props {
@@ -14,6 +15,14 @@ const {
   description = "Playable Data Blog - Expert insights and solutions for gaming analytics", 
   image = "/images/og-image.jpg" 
 } = Astro.props;
+
+// Extract path and URL information for dataLayer
+const currentPath = Astro.url.pathname;
+const pageType = currentPath.includes('/blog/') 
+  ? 'article' 
+  : currentPath.includes('/topics/') 
+    ? 'topic' 
+    : 'page';
 ---
 
 <!doctype html>
@@ -23,6 +32,28 @@ const {
     <meta name="viewport" content="width=device-width" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="generator" content={Astro.generator} />
+    
+    <!-- DataLayer initialization -->
+    <script is:inline define:vars={{ title, description, pageType }}>
+      window.dataLayer = window.dataLayer || [];
+      dataLayer.push({
+        'pageTitle': title,
+        'pageDescription': description,
+        'pageUrl': window.location.href,
+        'pagePath': window.location.pathname,
+        'pageType': pageType,
+        'event': 'pageView'
+      });
+    </script>
+    
+    <!-- Google Tag Manager -->
+    <script is:inline>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-NBP89PNV');</script>
+    <!-- End Google Tag Manager -->
+    
     <title>{title}</title>
     <meta name="description" content={description} />
     
@@ -46,10 +77,18 @@ const {
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   </head>
   <body class="min-h-screen flex flex-col bg-light-gray">
+    <!-- Google Tag Manager (noscript) -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-NBP89PNV"
+    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+    <!-- End Google Tag Manager (noscript) -->
+    
     <Header />
     <main class="flex-grow">
       <slot />
     </main>
     <Footer />
+    
+    <!-- Include GTM Events tracking -->
+    <GTMEvents />
   </body>
 </html>

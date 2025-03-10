@@ -10,7 +10,7 @@
         </p>
       </div>
       <div class="mt-8 lg:mt-0 lg:ml-8">
-        <form class="newsletter-form sm:flex">
+        <form id="newsletter-form" class="newsletter-form sm:flex">
           <label for="email-address" class="sr-only">Email address</label>
           <input
             id="email-address"
@@ -37,3 +37,48 @@
     </div>
   </div>
 </div>
+
+<script is:inline>
+  document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('newsletter-form');
+    
+    if (form) {
+      form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const email = document.getElementById('email-address').value;
+        
+        // Push form submission event to dataLayer
+        window.dataLayer = window.dataLayer || [];
+        dataLayer.push({
+          'event': 'formSubmission',
+          'formType': 'newsletter',
+          'formLocation': window.location.pathname,
+          'userEmail': email // Note: In production, consider hashing for privacy
+        });
+        
+        // Here you would typically handle the actual form submission
+        // For demo purposes, we're just showing successful tracking
+        alert('Thanks for subscribing! (This is a demo - no actual signup occurred)');
+        
+        // Clear the form
+        form.reset();
+      });
+    }
+    
+    // Track outbound links
+    document.querySelectorAll('a[href^="http"]').forEach(link => {
+      link.addEventListener('click', function(e) {
+        const url = this.getAttribute('href');
+        const linkText = this.textContent;
+        
+        window.dataLayer = window.dataLayer || [];
+        dataLayer.push({
+          'event': 'outboundLinkClick',
+          'outboundUrl': url,
+          'linkText': linkText
+        });
+      });
+    });
+  });
+</script>
