@@ -9,6 +9,7 @@ export default defineConfig({
   ],
   output: 'static',
   site: 'https://playabledata.io',
+  base: '/',
   build: {
     format: 'directory'
   },

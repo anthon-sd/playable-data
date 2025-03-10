@@ -68,7 +68,11 @@ export async function getArticles() {
         status: article.status || 'published',
         created_at: article.pubDate || new Date().toISOString(),
         updated_at: article.updatedDate || article.pubDate || new Date().toISOString(),
-        author: article.author || { name: 'Playable Data Team' }
+        author: article.author || { name: 'Playable Data Team' },
+        author_name: article.author_name || (article.author && article.author.name) || 'Playable Data Team',
+        author_id: article.author_id || (article.author && article.author.id),
+        author_image: article.author_image || (article.author && article.author.image),
+        featured: article.featured === true || article.featured === 'true' || false
       }));
     } catch (storageError) {
       console.error('Error fetching articles from storage:', storageError);
@@ -118,7 +122,11 @@ export async function getArticleById(id) {
         status: metadata.status || 'published',
         created_at: metadata.pubDate || new Date().toISOString(),
         updated_at: metadata.updatedDate || metadata.pubDate || new Date().toISOString(),
-        author: metadata.author || { name: 'Playable Data Team' }
+        author: metadata.author || { name: 'Playable Data Team' },
+        author_name: metadata.author_name || (metadata.author && metadata.author.name) || 'Playable Data Team',
+        author_id: metadata.author_id || (metadata.author && metadata.author.id),
+        author_image: metadata.author_image || (metadata.author && metadata.author.image),
+        featured: metadata.featured === true || metadata.featured === 'true' || false
       };
     } catch (storageError) {
       console.error(`Error fetching article ${id} from storage:`, storageError);

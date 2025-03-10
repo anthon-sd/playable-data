@@ -18,8 +18,10 @@ try {
 
 const sortedPosts = allPosts.sort((a, b) => new Date(b.created_at).valueOf() - new Date(a.created_at).valueOf());
 
-// Get featured post
-const featuredPost = sortedPosts.find(post => post.featured);
+// Get featured post - handling both boolean and string values
+const featuredPost = sortedPosts.find(post => 
+  post.featured === true || post.featured === 'true'
+);
 
 // Get remaining posts
 const remainingPosts = featuredPost 
@@ -31,6 +33,14 @@ const allTags = [...new Set(allPosts.flatMap(post => post.tags || []))].sort();
 
 // Convert database articles to the format expected by components
 function convertArticleToPost(article) {
+  // Get the author data, handling both nested and flat formats
+  const authorName = article.author_name || (article.author && article.author.name) || 'Playable Data Team';
+  const authorImage = article.author_image || (article.author && article.author.image);
+  const authorId = article.author_id || (article.author && article.author.id);
+  
+  // Handle featured flag properly
+  const isFeatured = article.featured === true || article.featured === 'true';
+  
   return {
     slug: article.slug,
     data: {
@@ -40,11 +50,13 @@ function convertArticleToPost(article) {
       updatedDate: article.updated_at ? new Date(article.updated_at) : undefined,
       coverImage: article.cover_image,
       author: {
-        name: article.author_name,
-        image: article.author_image
+        name: authorName,
+        image: authorImage,
+        id: authorId
       },
-      tags: article.tags,
-      featured: article.featured
+      tags: article.tags || [],
+      topics: article.topics || [],
+      featured: isFeatured
     }
   };
 }

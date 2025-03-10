@@ -14,8 +14,22 @@
   SUPABASE_SERVICE_ROLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdhbm9xdmpsZWF4ZmJjbXpxYXd3Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0MDY0OTE5NCwiZXhwIjoyMDU2MjI1MTk0fQ.iKu9B2-Sy84eIS9FD7qolsjEdVSy4JVxdPBv8wrMtzk"
   SITE_URL = "https://playabledata.io"
 
+# Redirect /blog/ path to main site
+[[redirects]]
+  from = "/blog/*"
+  to = "/:splat"
+  status = 301
+  force = true
+
 # This ensures that all routes are handled properly
 [[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
+
+# Force HTTPS
+[[redirects]]
+  from = "http://*"
+  to = "https://:splat"
+  status = 301
+  force = true
