@@ -33,6 +33,16 @@ const pageType = currentPath.includes('/blog/')
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="generator" content={Astro.generator} />
     
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-5H8NDL1T5T"></script>
+    <script is:inline>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-5H8NDL1T5T');
+    </script>
+    
     <!-- DataLayer initialization -->
     <script is:inline define:vars={{ title, description, pageType }}>
       window.dataLayer = window.dataLayer || [];
