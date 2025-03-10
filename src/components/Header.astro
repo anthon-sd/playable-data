@@ -1,19 +1,19 @@
 ---
 const navItems = [
-  { name: 'Blog', href: '/blog/' },
+  { name: 'Blog', href: '/' },
   { name: 'Topics', href: '/topics/' }
 ];
 
 const currentPath = Astro.url.pathname;
 const logoUrl = "/images/logo.png";
-const siteUrl = import.meta.env.SITE_URL || "https://playabledata.io";
+const mainSiteUrl = "https://playabledata.io";
 ---
 
 <header class="header">
   <div class="container-custom">
     <div class="flex justify-between h-32">
       <div class="flex items-center">
-        <a href={siteUrl} class="flex-shrink-0 flex items-center">
+        <a href={mainSiteUrl} class="flex-shrink-0 flex items-center">
           <img src={logoUrl} alt="Playable Data Logo" class="h-48 w-auto" />
         </a>
       </div>

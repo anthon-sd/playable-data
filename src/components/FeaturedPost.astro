@@ -13,7 +13,7 @@ const postTopics = topics.length > 0 ? topics : tags;
   <div class="md:flex">
     {coverImage && (
       <div class="md:flex-shrink-0 md:w-1/2">
-        <a href={`/blog/${slug}/`} class="block h-72 md:h-full">
+        <a href={`/${slug}/`} class="block h-72 md:h-full">
           <img 
             src={coverImage} 
             alt={`Cover image for ${title}`} 
@@ -37,7 +37,7 @@ const postTopics = topics.length > 0 ? topics : tags;
       )}
       
       <h2 class="text-2xl md:text-3xl font-bold mb-4 text-black">
-        <a href={`/blog/${slug}/`} class="hover:text-primary transition">
+        <a href={`/${slug}/`} class="hover:text-primary transition">
           {title}
         </a>
       </h2>
@@ -57,7 +57,7 @@ const postTopics = topics.length > 0 ? topics : tags;
         <time datetime={pubDate.toISOString()}>{formatDate(pubDate)}</time>
       </div>
       
-      <a href={`/blog/${slug}/`} class="inline-flex items-center justify-center px-5 py-3 border border-transparent text-base font-medium rounded-md text-black bg-[#ffaa0c] hover:bg-opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#ffaa0c] w-full md:w-auto">
+      <a href={`/${slug}/`} class="inline-flex items-center justify-center px-5 py-3 border border-transparent text-base font-medium rounded-md text-black bg-[#ffaa0c] hover:bg-opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#ffaa0c] w-full md:w-auto">
         Read Article
         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-2" viewBox="0 0 20 20" fill="currentColor">
           <path fill-rule="evenodd" d="M12.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-2.293-2.293a1 1 0 010-1.414z" clip-rule="evenodd" />
