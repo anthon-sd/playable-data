@@ -542,6 +542,46 @@ export async function deleteMedia(path) {
 }
 
 /**
+ * List all media files in the media bucket
+ * @param {string} folder - Optional folder path to list files from
+ * @returns {Promise<Array>} - Array of media files with metadata
+ */
+export async function listMedia(folder = '') {
+  try {
+    await initializeStorage();
+    
+    const { data: files, error } = await supabase.storage
+      .from(MEDIA_BUCKET)
+      .list(folder);
+      
+    if (error) {
+      console.error('Error listing media:', error);
+      throw error;
+    }
+    
+    // Get URLs for each file
+    const mediaWithUrls = await Promise.all(
+      files.filter(file => !file.id.endsWith('/')).map(async (file) => {
+        const path = folder ? `${folder}/${file.name}` : file.name;
+        const { data: { publicUrl } } = supabase.storage
+          .from(MEDIA_BUCKET)
+          .getPublicUrl(path);
+          
+        return {
+          ...file,
+          url: publicUrl
+        };
+      })
+    );
+    
+    return mediaWithUrls;
+  } catch (error) {
+    console.error('Error listing media:', error);
+    throw error;
+  }
+}
+
+/**
  * List all content files in the articles bucket
  */
 export async function listContent() {
