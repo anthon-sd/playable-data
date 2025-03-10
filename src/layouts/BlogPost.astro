@@ -71,7 +71,14 @@ const articleStructuredData = {
 };
 ---
 
-<Layout {...metaData}>
+<Layout 
+  title={title} 
+  description={description} 
+  image={coverImage} 
+  type="article" 
+  publishDate={pubDate} 
+  modifiedDate={updatedDate}
+>
   <!-- Add GTM article tracking -->
   <script is:inline define:vars={{ articleData, title, description, publishDate: pubDate, modifiedDate: updatedDate, canonicalUrl: Astro.url.href, tags, authorName, coverImage }}>
     window.dataLayer = window.dataLayer || [];
