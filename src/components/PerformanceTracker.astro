@@ -1,0 +1,168 @@
+---
+/**
+ * Performance Tracker Component
+ * 
+ * Tracks Core Web Vitals and reports them to Google Analytics
+ * Ensures proper tracking of SEO and performance metrics
+ * Used for debugging and improving site performance
+ */
+---
+
+<script is:inline>
+  // Web Vitals tracking for performance monitoring
+  document.addEventListener('DOMContentLoaded', function() {
+    // Wait for the page to fully load before measuring
+    window.addEventListener('load', function() {
+      setTimeout(function() {
+        // Only run in production or if debugging is enabled
+        if (localStorage.getItem('debug_performance') === 'true' || window.location.hostname !== 'localhost') {
+          try {
+            const dataLayer = window.dataLayer = window.dataLayer || [];
+            
+            // Create helpers for sending metrics
+            const sendWebVitalToGA = (name, value, rating) => {
+              dataLayer.push({
+                event: 'web_vitals',
+                web_vital: {
+                  name: name,
+                  value: Math.round(value),
+                  rating: rating
+                }
+              });
+              
+              console.debug(`[Performance] ${name}: ${Math.round(value)}ms (${rating})`);
+            };
+            
+            // Track Core Web Vitals
+            if ('PerformanceObserver' in window) {
+              // Largest Contentful Paint
+              try {
+                new PerformanceObserver((entryList) => {
+                  const entries = entryList.getEntries();
+                  const lastEntry = entries[entries.length - 1];
+                  const lcpValue = lastEntry.startTime;
+                  const lcpRating = lcpValue < 2500 ? 'good' : lcpValue < 4000 ? 'needs-improvement' : 'poor';
+                  
+                  sendWebVitalToGA('LCP', lcpValue, lcpRating);
+                }).observe({ type: 'largest-contentful-paint', buffered: true });
+              } catch (e) {
+                console.error('LCP tracking error:', e);
+              }
+              
+              // Cumulative Layout Shift
+              try {
+                let clsValue = 0;
+                new PerformanceObserver((entryList) => {
+                  for (const entry of entryList.getEntries()) {
+                    if (!entry.hadRecentInput) {
+                      clsValue += entry.value;
+                    }
+                  }
+                  
+                  const clsRating = clsValue < 0.1 ? 'good' : clsValue < 0.25 ? 'needs-improvement' : 'poor';
+                  sendWebVitalToGA('CLS', clsValue * 1000, clsRating); // Convert to millisecond scale for consistency
+                }).observe({ type: 'layout-shift', buffered: true });
+              } catch (e) {
+                console.error('CLS tracking error:', e);
+              }
+              
+              // First Input Delay
+              try {
+                new PerformanceObserver((entryList) => {
+                  for (const entry of entryList.getEntries()) {
+                    const fidValue = entry.processingStart - entry.startTime;
+                    const fidRating = fidValue < 100 ? 'good' : fidValue < 300 ? 'needs-improvement' : 'poor';
+                    
+                    sendWebVitalToGA('FID', fidValue, fidRating);
+                  }
+                }).observe({ type: 'first-input', buffered: true });
+              } catch (e) {
+                console.error('FID tracking error:', e);
+              }
+              
+              // Interaction to Next Paint (INP) - newer metric
+              if (PerformanceObserver.supportedEntryTypes.includes('event')) {
+                try {
+                  let maxINP = 0;
+                  new PerformanceObserver((entryList) => {
+                    for (const entry of entryList.getEntries()) {
+                      // Only measure a subset of events for INP
+                      if (['click', 'keydown', 'mousedown', 'pointerdown'].includes(entry.name)) {
+                        const inputDelay = entry.processingStart - entry.startTime;
+                        if (inputDelay > maxINP) {
+                          maxINP = inputDelay;
+                          const inpRating = maxINP < 200 ? 'good' : maxINP < 500 ? 'needs-improvement' : 'poor';
+                          sendWebVitalToGA('INP', maxINP, inpRating);
+                        }
+                      }
+                    }
+                  }).observe({ type: 'event', buffered: true, durationThreshold: 16 });
+                } catch (e) {
+                  console.error('INP tracking error:', e);
+                }
+              }
+            }
+            
+            // Track general page performance metrics
+            if (performance && 'getEntriesByType' in performance) {
+              const navEntry = performance.getEntriesByType('navigation')[0];
+              if (navEntry) {
+                // Report navigation timing metrics
+                dataLayer.push({
+                  event: 'performance_metrics',
+                  performance: {
+                    ttfb: Math.round(navEntry.responseStart - navEntry.requestStart),
+                    domLoad: Math.round(navEntry.domContentLoadedEventEnd - navEntry.startTime),
+                    fullyLoaded: Math.round(navEntry.loadEventEnd - navEntry.startTime),
+                    transferSize: navEntry.transferSize,
+                    decodedBodySize: navEntry.decodedBodySize
+                  }
+                });
+              }
+            }
+          } catch (e) {
+            console.error('Performance tracking error:', e);
+          }
+        }
+      }, 3000); // Delay to ensure metrics are collected after paint events
+    });
+  });
+  
+  // Track image loading performance
+  window.addEventListener('load', function() {
+    setTimeout(function() {
+      const dataLayer = window.dataLayer = window.dataLayer || [];
+      const imageElements = document.querySelectorAll('img');
+      let loadedImages = 0;
+      let totalImageSize = 0;
+      
+      imageElements.forEach(function(img) {
+        if (img.complete && img.naturalWidth > 0) {
+          loadedImages++;
+          
+          // Try to get image size from performance entries
+          if (performance && performance.getEntriesByName) {
+            const imgUrl = img.currentSrc || img.src;
+            const imgResources = performance.getEntriesByName(imgUrl, 'resource');
+            if (imgResources.length > 0) {
+              totalImageSize += imgResources[0].decodedBodySize || 0;
+            }
+          }
+        }
+      });
+      
+      // Report image stats
+      if (imageElements.length > 0) {
+        dataLayer.push({
+          event: 'image_performance',
+          image_stats: {
+            total_images: imageElements.length,
+            loaded_images: loadedImages,
+            total_image_size_kb: Math.round(totalImageSize / 1024),
+            avg_image_size_kb: Math.round((totalImageSize / loadedImages) / 1024) || 0
+          }
+        });
+      }
+    }, 4000);
+  });
+</script> 

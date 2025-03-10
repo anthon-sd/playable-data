@@ -1,0 +1,86 @@
+/**
+ * OptimizedImage Component
+ * 
+ * A wrapper for images that improves Core Web Vitals by:
+ * - Adding width and height attributes to prevent layout shift (CLS)
+ * - Using loading="lazy" for images below the fold
+ * - Adding fetchpriority for important images
+ * - Supporting responsive images with srcset
+ */
+
+export interface Props {
+  src: string;
+  alt: string;
+  width?: number;
+  height?: number;
+  class?: string;
+  loading?: 'eager' | 'lazy';
+  fetchpriority?: 'high' | 'low' | 'auto';
+  aspectRatio?: string;
+  sizes?: string;
+  isCritical?: boolean;
+  placeholder?: string;
+}
+
+const {
+  src,
+  alt,
+  width,
+  height,
+  class: className = '',
+  loading = 'lazy',
+  fetchpriority = 'auto',
+  aspectRatio,
+  sizes = '100vw',
+  isCritical = false,
+  placeholder = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzIDIiPjwvc3ZnPg=='
+} = Astro.props;
+
+// For non-critical images, use lazy loading
+const finalLoading = isCritical ? 'eager' : loading;
+// For critical images, use high priority
+const finalFetchPriority = isCritical ? 'high' : fetchpriority;
+
+// Determine if the image is served from Supabase storage
+const isSupabaseImage = src.includes('supabase.co/storage');
+
+// Calculate srcset for responsive images (if not from Supabase)
+// This is a simplified approach - in production you'd want to generate actual different sizes
+const getSrcset = () => {
+  if (isSupabaseImage) return undefined; // Supabase doesn't support resize transformations this way
+  
+  // Simple srcset that adjusts width for different viewports
+  return `${src} 1x, ${src} 2x`;
+};
+
+// Create a style object for aspect ratio if provided
+const aspectRatioStyle = aspectRatio ? `aspect-ratio: ${aspectRatio};` : '';
+
+<div class={`optimized-image-container ${className}`} style={aspectRatioStyle}>
+  <img
+    src={src}
+    alt={alt}
+    loading={finalLoading}
+    fetchpriority={finalFetchPriority}
+    width={width}
+    height={height}
+    sizes={sizes}
+    srcset={getSrcset()}
+    decoding={isCritical ? 'sync' : 'async'}
+    style={`background-image: url(${placeholder}); background-size: cover;`}
+  />
+</div>
+
+<style>
+  .optimized-image-container {
+    position: relative;
+    overflow: hidden;
+    width: 100%;
+  }
+  
+  .optimized-image-container img {
+    width: 100%;
+    height: auto;
+    display: block;
+  }
+</style> 

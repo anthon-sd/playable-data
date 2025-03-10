@@ -1,4 +1,17 @@
+# Playable Data Blog robots.txt
+
+# Allow all crawlers
 User-agent: *
 Allow: /
 
+# Sitemap location
 Sitemap: https://playabledata.io/sitemap.xml
+
+# Disallow admin or non-production pages
+Disallow: /admin/
+Disallow: /draft/
+Disallow: /preview/
+Disallow: /maintenance/
+
+# Optimize crawl rate
+Crawl-delay: 1

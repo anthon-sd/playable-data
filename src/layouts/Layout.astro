@@ -2,18 +2,27 @@
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
 import GTMEvents from '../components/GTMEvents.astro';
+import PerformanceTracker from '../components/PerformanceTracker.astro';
 import '../styles/stats-toolkit-theme.css';
 
 export interface Props {
   title: string;
   description?: string;
   image?: string;
+  canonicalUrl?: string;
+  type?: 'website' | 'article';
+  publishDate?: Date;
+  modifiedDate?: Date;
 }
 
 const { 
   title, 
   description = "Playable Data Blog - Expert insights and solutions for gaming analytics", 
-  image = "/images/og-image.jpg" 
+  image = "/images/og-image.jpg",
+  canonicalUrl = Astro.url.href,
+  type = "website",
+  publishDate,
+  modifiedDate
 } = Astro.props;
 
 // Extract path and URL information for dataLayer
@@ -33,6 +42,12 @@ const pageType = currentPath.includes('/blog/')
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="generator" content={Astro.generator} />
     
+    <!-- Preconnect to important domains for performance -->
+    <link rel="preconnect" href="https://www.googletagmanager.com">
+    <link rel="preconnect" href="https://www.google-analytics.com">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    
     <!-- Google tag (gtag.js) -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-5H8NDL1T5T"></script>
     <script is:inline>
@@ -40,19 +55,119 @@ const pageType = currentPath.includes('/blog/')
       function gtag(){dataLayer.push(arguments);}
       gtag('js', new Date());
 
-      gtag('config', 'G-5H8NDL1T5T');
+      gtag('config', 'G-5H8NDL1T5T', {
+        'send_page_view': false // Control page views through the dataLayer
+      });
     </script>
     
     <!-- DataLayer initialization -->
-    <script is:inline define:vars={{ title, description, pageType }}>
+    <script is:inline define:vars={{ title, description, pageType, canonicalUrl, type, image }}>
       window.dataLayer = window.dataLayer || [];
+      
+      // Enhanced dataLayer for better SEO and performance tracking
       dataLayer.push({
-        'pageTitle': title,
-        'pageDescription': description,
-        'pageUrl': window.location.href,
-        'pagePath': window.location.pathname,
-        'pageType': pageType,
-        'event': 'pageView'
+        'event': 'pageView',
+        'pageData': {
+          'title': title,
+          'description': description,
+          'url': window.location.href,
+          'path': window.location.pathname,
+          'type': pageType,
+          'contentType': type,
+          'canonicalUrl': canonicalUrl,
+          'hasImage': !!image,
+          'referrer': document.referrer || 'direct',
+          'deviceType': window.innerWidth < 768 ? 'mobile' : window.innerWidth < 1024 ? 'tablet' : 'desktop',
+          'viewportWidth': window.innerWidth,
+          'viewportHeight': window.innerHeight
+        },
+        'seoData': {
+          'structuredData': type === 'article' ? true : false,
+          'hasMeta': true,
+          'hasCanonical': !!canonicalUrl,
+          'hasOGTags': true
+        }
+      });
+      
+      // Track Core Web Vitals
+      document.addEventListener('DOMContentLoaded', function() {
+        setTimeout(function() {
+          if ('performance' in window) {
+            // Create performanceObserver for LCP
+            if ('PerformanceObserver' in window) {
+              try {
+                // Track Largest Contentful Paint
+                new PerformanceObserver((entryList) => {
+                  const entries = entryList.getEntries();
+                  const lastEntry = entries[entries.length - 1];
+                  
+                  dataLayer.push({
+                    'event': 'core_web_vitals',
+                    'web_vitals': {
+                      'metric': 'LCP',
+                      'value': lastEntry.startTime,
+                      'rating': lastEntry.startTime < 2500 ? 'good' : lastEntry.startTime < 4000 ? 'needs-improvement' : 'poor'
+                    }
+                  });
+                }).observe({ type: 'largest-contentful-paint', buffered: true });
+                
+                // Track Cumulative Layout Shift
+                new PerformanceObserver((entryList) => {
+                  const entries = entryList.getEntries();
+                  let cumulativeScore = 0;
+                  
+                  for (const entry of entries) {
+                    if (!entry.hadRecentInput) {
+                      cumulativeScore += entry.value;
+                    }
+                  }
+                  
+                  dataLayer.push({
+                    'event': 'core_web_vitals',
+                    'web_vitals': {
+                      'metric': 'CLS',
+                      'value': cumulativeScore,
+                      'rating': cumulativeScore < 0.1 ? 'good' : cumulativeScore < 0.25 ? 'needs-improvement' : 'poor'
+                    }
+                  });
+                }).observe({ type: 'layout-shift', buffered: true });
+                
+                // Track First Input Delay
+                new PerformanceObserver((entryList) => {
+                  const entries = entryList.getEntries();
+                  for (const entry of entries) {
+                    dataLayer.push({
+                      'event': 'core_web_vitals',
+                      'web_vitals': {
+                        'metric': 'FID',
+                        'value': entry.processingStart - entry.startTime,
+                        'rating': (entry.processingStart - entry.startTime) < 100 ? 'good' : 
+                                 (entry.processingStart - entry.startTime) < 300 ? 'needs-improvement' : 'poor'
+                      }
+                    });
+                  }
+                }).observe({ type: 'first-input', buffered: true });
+              } catch (e) {
+                console.error('Performance Observer error:', e);
+              }
+            }
+            
+            // Track navigation timing metrics
+            const navTiming = performance.getEntriesByType('navigation')[0];
+            if (navTiming) {
+              dataLayer.push({
+                'event': 'performance_metrics',
+                'performance': {
+                  'dns': navTiming.domainLookupEnd - navTiming.domainLookupStart,
+                  'tcp': navTiming.connectEnd - navTiming.connectStart,
+                  'ttfb': navTiming.responseStart - navTiming.requestStart,
+                  'domLoad': navTiming.domComplete - navTiming.domLoading,
+                  'fullyLoaded': navTiming.loadEventEnd - navTiming.startTime
+                }
+              });
+            }
+          }
+        }, 3000); // Delay to ensure metrics are collected
       });
     </script>
     
@@ -66,25 +181,72 @@ const pageType = currentPath.includes('/blog/')
     
     <title>{title}</title>
     <meta name="description" content={description} />
+    <link rel="canonical" href={canonicalUrl} />
+    
+    <!-- Structured data for improved search results -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": type === "article" ? "Article" : "WebSite",
+        "headline": title,
+        "description": description,
+        "image": [new URL(image, Astro.site || Astro.url).toString()],
+        "author": {
+          "@type": "Organization",
+          "name": "Playable Data",
+          "url": "https://playabledata.io"
+        },
+        "publisher": {
+          "@type": "Organization",
+          "name": "Playable Data",
+          "logo": {
+            "@type": "ImageObject",
+            "url": new URL("/images/logo.png", Astro.site || Astro.url).toString()
+          }
+        },
+        "url": canonicalUrl,
+        ...(publishDate && {"datePublished": publishDate.toISOString()}),
+        ...(modifiedDate && {"dateModified": modifiedDate.toISOString()})
+      }
+    </script>
     
     <!-- Open Graph / Facebook -->
-    <meta property="og:type" content="website" />
-    <meta property="og:url" content={Astro.url} />
+    <meta property="og:type" content={type} />
+    <meta property="og:url" content={canonicalUrl} />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
-    <meta property="og:image" content={new URL(image, Astro.url)} />
+    <meta property="og:image" content={new URL(image, Astro.site || Astro.url)} />
+    <meta property="og:site_name" content="Playable Data" />
+    {publishDate && <meta property="article:published_time" content={publishDate.toISOString()} />}
+    {modifiedDate && <meta property="article:modified_time" content={modifiedDate.toISOString()} />}
 
     <!-- Twitter -->
     <meta property="twitter:card" content="summary_large_image" />
-    <meta property="twitter:url" content={Astro.url} />
+    <meta property="twitter:url" content={canonicalUrl} />
     <meta property="twitter:title" content={title} />
     <meta property="twitter:description" content={description} />
-    <meta property="twitter:image" content={new URL(image, Astro.url)} />
+    <meta property="twitter:image" content={new URL(image, Astro.site || Astro.url)} />
     
-    <!-- Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Fonts with display swap for better performance -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'" />
+    <noscript>
+      <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+    </noscript>
+    
+    <!-- Core Web Vitals optimization -->
+    <style is:inline>
+      /* Prevent Cumulative Layout Shift (CLS) */
+      img, picture, video {
+        max-width: 100%;
+        height: auto;
+        display: block;
+      }
+
+      /* Ensure main content areas have dimensions before load */
+      .card-hover, .container-custom {
+        contain: content;
+      }
+    </style>
   </head>
   <body class="min-h-screen flex flex-col bg-light-gray">
     <!-- Google Tag Manager (noscript) -->
@@ -100,5 +262,24 @@ const pageType = currentPath.includes('/blog/')
     
     <!-- Include GTM Events tracking -->
     <GTMEvents />
+    
+    <!-- Include Performance Tracker -->
+    <PerformanceTracker />
+    
+    <!-- Delay non-critical JS -->
+    <script type="module" defer>
+      // Add any non-critical JavaScript here
+      document.addEventListener('DOMContentLoaded', () => {
+        // Lazy load images that are below the fold
+        if ('loading' in HTMLImageElement.prototype) {
+          const images = document.querySelectorAll('img[loading="lazy"]');
+          images.forEach(img => {
+            if (img.dataset.src) {
+              img.src = img.dataset.src;
+            }
+          });
+        }
+      });
+    </script>
   </body>
 </html>
