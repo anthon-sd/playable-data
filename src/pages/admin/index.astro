@@ -1,0 +1,139 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import { supabase } from '../../db/supabase';
+
+// Check if user is authenticated
+const isAuthenticated = Astro.request.headers.get('cookie')?.includes('supabase-auth-token=');
+
+// Redirect if not authenticated
+if (!isAuthenticated) {
+  return Astro.redirect('/admin/login');
+}
+
+// Fetch some basic stats for the dashboard
+let stats = {
+  totalArticles: 0,
+  newsletterSignups: 0,
+  recentSignups: []
+};
+
+try {
+  if (supabase) {
+    // Get article count
+    const { count: articleCount } = await supabase
+      .from('articles')
+      .select('*', { count: 'exact', head: true });
+    
+    stats.totalArticles = articleCount || 0;
+    
+    // Get newsletter signup count
+    const { count: signupCount } = await supabase
+      .from('newsletter_signups')
+      .select('*', { count: 'exact', head: true });
+    
+    stats.newsletterSignups = signupCount || 0;
+    
+    // Get recent signups
+    const { data: recentSignupData } = await supabase
+      .from('newsletter_signups')
+      .select('*')
+      .order('signup_date', { ascending: false })
+      .limit(5);
+    
+    stats.recentSignups = recentSignupData || [];
+  }
+} catch (error) {
+  console.error('Error fetching admin dashboard data:', error);
+}
+
+// Format date for display
+function formatDate(dateString) {
+  try {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { 
+      year: 'numeric', 
+      month: 'short', 
+      day: 'numeric' 
+    });
+  } catch (e) {
+    return 'Invalid date';
+  }
+}
+---
+
+<AdminLayout title="Admin Dashboard | Playable Data">
+  <div class="container mx-auto px-4 py-8">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+      <!-- Stats Cards -->
+      <div class="bg-white rounded-lg shadow p-6">
+        <h3 class="text-lg font-medium text-gray-900 mb-2">Total Articles</h3>
+        <p class="text-3xl font-bold text-blue-600">{stats.totalArticles}</p>
+        <a href="/admin/articles/" class="text-sm text-blue-500 hover:text-blue-700 mt-2 inline-block">
+          Manage Articles →
+        </a>
+      </div>
+      
+      <div class="bg-white rounded-lg shadow p-6">
+        <h3 class="text-lg font-medium text-gray-900 mb-2">Newsletter Subscribers</h3>
+        <p class="text-3xl font-bold text-blue-600">{stats.newsletterSignups}</p>
+        <a href="/admin/newsletter/" class="text-sm text-blue-500 hover:text-blue-700 mt-2 inline-block">
+          View Subscribers →
+        </a>
+      </div>
+      
+      <div class="bg-white rounded-lg shadow p-6">
+        <h3 class="text-lg font-medium text-gray-900 mb-2">Quick Links</h3>
+        <ul class="space-y-2">
+          <li>
+            <a href="/admin/articles/new" class="text-blue-500 hover:text-blue-700">
+              Create New Article
+            </a>
+          </li>
+          <li>
+            <a href="/admin/newsletter/" class="text-blue-500 hover:text-blue-700">
+              Export Subscribers
+            </a>
+          </li>
+          <li>
+            <a href="/" target="_blank" class="text-blue-500 hover:text-blue-700">
+              View Website
+            </a>
+          </li>
+        </ul>
+      </div>
+    </div>
+    
+    <!-- Recent Signups -->
+    <div class="bg-white rounded-lg shadow overflow-hidden">
+      <div class="px-6 py-4 border-b border-gray-200">
+        <h3 class="text-lg font-medium text-gray-900">Recent Newsletter Signups</h3>
+      </div>
+      
+      {stats.recentSignups.length > 0 ? (
+        <div class="divide-y divide-gray-200">
+          {stats.recentSignups.map((signup) => (
+            <div class="px-6 py-4">
+              <div class="flex justify-between">
+                <span class="font-medium">{signup.email}</span>
+                <span class="text-gray-500 text-sm">{formatDate(signup.signup_date)}</span>
+              </div>
+              <div class="text-sm text-gray-500 mt-1">
+                Source: {signup.source || 'Direct'}
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div class="px-6 py-4 text-center text-gray-500">
+          No recent signups found.
+        </div>
+      )}
+      
+      <div class="px-6 py-4 bg-gray-50 border-t border-gray-200">
+        <a href="/admin/newsletter/" class="text-sm text-blue-500 hover:text-blue-700">
+          View all subscribers →
+        </a>
+      </div>
+    </div>
+  </div>
+</AdminLayout> 

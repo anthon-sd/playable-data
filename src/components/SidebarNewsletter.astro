@@ -31,10 +31,96 @@
     </button>
   </form>
   
+  <div class="sidebar-message mt-3 text-sm" style="display: none;"></div>
+  
   <p class="mt-3 text-xs text-accent-lighter">
     By subscribing, you agree to our <a href="/privacy-policy" class="font-medium underline">Privacy Policy</a>.
   </p>
 </div>
+
+<script is:inline>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Get all sidebar newsletter forms (there might be multiple on a page)
+    const forms = document.querySelectorAll('.sidebar-newsletter .newsletter-form');
+    
+    forms.forEach((form, index) => {
+      form.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const emailInput = this.querySelector('input[type="email"]');
+        if (!emailInput) return;
+        
+        const email = emailInput.value;
+        const submitButton = this.querySelector('button[type="submit"]');
+        const messageEl = this.closest('.sidebar-newsletter').querySelector('.sidebar-message');
+        
+        // Disable button and show loading state
+        if (submitButton) {
+          submitButton.disabled = true;
+          submitButton.innerHTML = 'Subscribing...';
+        }
+        
+        try {
+          // Push form submission event to dataLayer
+          window.dataLayer = window.dataLayer || [];
+          dataLayer.push({
+            'event': 'formSubmission',
+            'formType': 'sidebar_newsletter',
+            'formLocation': window.location.pathname,
+            'userEmail': email
+          });
+          
+          // Save to Supabase via API endpoint
+          const response = await fetch('/api/newsletter-signup', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              email,
+              source: 'sidebar_newsletter',
+              pageUrl: window.location.href
+            })
+          });
+          
+          const result = await response.json();
+          
+          // Show success/error message
+          if (messageEl) {
+            messageEl.style.display = 'block';
+            
+            if (result.success) {
+              messageEl.className = 'mt-3 text-sm text-green-400 sidebar-message';
+            } else {
+              messageEl.className = 'mt-3 text-sm text-red-400 sidebar-message';
+            }
+            
+            messageEl.textContent = result.message;
+          }
+          
+          // If success, clear the form
+          if (result.success) {
+            this.reset();
+          }
+        } catch (error) {
+          console.error('Error submitting sidebar newsletter form:', error);
+          
+          if (messageEl) {
+            messageEl.style.display = 'block';
+            messageEl.className = 'mt-3 text-sm text-red-400 sidebar-message';
+            messageEl.textContent = 'An error occurred. Please try again later.';
+          }
+        } finally {
+          // Re-enable button
+          if (submitButton) {
+            submitButton.disabled = false;
+            submitButton.innerHTML = 'Subscribe';
+          }
+        }
+      });
+    });
+  });
+</script>
 
 <style>
   /* Simple responsive styling */

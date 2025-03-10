@@ -30,6 +30,7 @@
             </button>
           </div>
         </form>
+        <div id="newsletter-message" class="mt-3 text-sm" style="display: none;"></div>
         <p class="mt-3 text-sm text-accent-lighter">
           We care about your data. Read our <a href="/privacy-policy" class="font-medium underline">Privacy Policy</a>.
         </p>
@@ -41,28 +42,78 @@
 <script is:inline>
   document.addEventListener('DOMContentLoaded', function() {
     const form = document.getElementById('newsletter-form');
+    const messageEl = document.getElementById('newsletter-message');
     
     if (form) {
-      form.addEventListener('submit', function(e) {
+      form.addEventListener('submit', async function(e) {
         e.preventDefault();
         
         const email = document.getElementById('email-address').value;
+        const submitButton = form.querySelector('button[type="submit"]');
         
-        // Push form submission event to dataLayer
-        window.dataLayer = window.dataLayer || [];
-        dataLayer.push({
-          'event': 'formSubmission',
-          'formType': 'newsletter',
-          'formLocation': window.location.pathname,
-          'userEmail': email // Note: In production, consider hashing for privacy
-        });
+        // Disable button and show loading state
+        if (submitButton) {
+          submitButton.disabled = true;
+          submitButton.innerHTML = 'Subscribing...';
+        }
         
-        // Here you would typically handle the actual form submission
-        // For demo purposes, we're just showing successful tracking
-        alert('Thanks for subscribing! (This is a demo - no actual signup occurred)');
-        
-        // Clear the form
-        form.reset();
+        try {
+          // Push form submission event to dataLayer
+          window.dataLayer = window.dataLayer || [];
+          dataLayer.push({
+            'event': 'formSubmission',
+            'formType': 'newsletter',
+            'formLocation': window.location.pathname,
+            'userEmail': email // Note: In production, consider hashing for privacy
+          });
+          
+          // Save to Supabase via API endpoint
+          const response = await fetch('/api/newsletter-signup', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              email,
+              source: 'main_newsletter',
+              pageUrl: window.location.href
+            })
+          });
+          
+          const result = await response.json();
+          
+          // Show success/error message
+          if (messageEl) {
+            messageEl.style.display = 'block';
+            
+            if (result.success) {
+              messageEl.className = 'mt-3 text-sm text-green-400';
+            } else {
+              messageEl.className = 'mt-3 text-sm text-red-400';
+            }
+            
+            messageEl.textContent = result.message;
+          }
+          
+          // If success, clear the form
+          if (result.success) {
+            form.reset();
+          }
+        } catch (error) {
+          console.error('Error submitting newsletter form:', error);
+          
+          if (messageEl) {
+            messageEl.style.display = 'block';
+            messageEl.className = 'mt-3 text-sm text-red-400';
+            messageEl.textContent = 'An error occurred. Please try again later.';
+          }
+        } finally {
+          // Re-enable button
+          if (submitButton) {
+            submitButton.disabled = false;
+            submitButton.innerHTML = 'Subscribe';
+          }
+        }
       });
     }
     

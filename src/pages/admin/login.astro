@@ -1,0 +1,133 @@
+---
+import Layout from '../../layouts/Layout.astro';
+---
+
+<Layout title="Admin Login | Playable Data" description="Login to the Playable Data admin panel">
+  <div class="min-h-screen bg-gray-100 flex flex-col justify-center">
+    <div class="max-w-md w-full mx-auto">
+      <div class="text-center mb-8">
+        <h2 class="mt-6 text-3xl font-extrabold text-gray-900">
+          Sign in to Admin
+        </h2>
+        <p class="mt-2 text-sm text-gray-600">
+          Access the Playable Data content management system
+        </p>
+      </div>
+      
+      <div class="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
+        <form id="login-form" class="space-y-6">
+          <div>
+            <label for="email" class="block text-sm font-medium text-gray-700">
+              Email address
+            </label>
+            <div class="mt-1">
+              <input
+                id="email"
+                name="email"
+                type="email"
+                autocomplete="email"
+                required
+                class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label for="password" class="block text-sm font-medium text-gray-700">
+              Password
+            </label>
+            <div class="mt-1">
+              <input
+                id="password"
+                name="password"
+                type="password"
+                autocomplete="current-password"
+                required
+                class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+              />
+            </div>
+          </div>
+
+          <div id="login-error" class="text-red-500 text-sm hidden"></div>
+          
+          <div>
+            <button
+              type="submit"
+              class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            >
+              Sign in
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</Layout>
+
+<script is:inline>
+  document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('login-form');
+    const errorDiv = document.getElementById('login-error');
+    
+    if (form) {
+      form.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const emailInput = document.getElementById('email');
+        const passwordInput = document.getElementById('password');
+        const submitButton = form.querySelector('button[type="submit"]');
+        
+        if (!emailInput || !passwordInput) return;
+        
+        const email = emailInput.value;
+        const password = passwordInput.value;
+        
+        // Reset error
+        if (errorDiv) {
+          errorDiv.textContent = '';
+          errorDiv.classList.add('hidden');
+        }
+        
+        // Disable button
+        if (submitButton) {
+          submitButton.disabled = true;
+          submitButton.textContent = 'Signing in...';
+        }
+        
+        try {
+          // Call the login API endpoint
+          const response = await fetch('/api/auth/login', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ email, password })
+          });
+          
+          const result = await response.json();
+          
+          if (!result.success) {
+            throw new Error(result.message || 'Failed to sign in');
+          }
+          
+          // Redirect to admin dashboard on success
+          window.location.href = '/admin/';
+        } catch (error) {
+          console.error('Login error:', error);
+          
+          // Show error message
+          if (errorDiv) {
+            errorDiv.textContent = error.message || 'Failed to sign in. Please check your credentials.';
+            errorDiv.classList.remove('hidden');
+          }
+          
+          // Re-enable button
+          if (submitButton) {
+            submitButton.disabled = false;
+            submitButton.textContent = 'Sign in';
+          }
+        }
+      });
+    }
+  });
+</script> 

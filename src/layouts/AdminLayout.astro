@@ -1,0 +1,56 @@
+---
+import Layout from './Layout.astro';
+
+interface Props {
+  title: string;
+  description?: string;
+}
+
+const { title, description = "Admin dashboard for Playable Data content management" } = Astro.props;
+
+// Admin navigation items
+const navItems = [
+  { name: 'Dashboard', href: '/admin/' },
+  { name: 'Articles', href: '/admin/articles/' },
+  { name: 'Newsletter', href: '/admin/newsletter/' }
+];
+
+const currentPath = Astro.url.pathname;
+---
+
+<Layout title={title} description={description} type="website">
+  <div class="bg-gray-100 min-h-screen">
+    <!-- Admin Header -->
+    <header class="bg-white shadow">
+      <div class="container mx-auto px-4 py-6">
+        <div class="flex items-center justify-between">
+          <h1 class="text-2xl font-bold text-gray-900">Admin Dashboard</h1>
+          <a href="/" class="text-blue-600 hover:text-blue-800">← Back to Site</a>
+        </div>
+      </div>
+    </header>
+    
+    <!-- Admin Navigation -->
+    <div class="container mx-auto px-4 py-4">
+      <nav class="flex flex-wrap mb-4">
+        {navItems.map(item => (
+          <a 
+            href={item.href} 
+            class={`mr-4 px-4 py-2 rounded-lg transition-colors ${
+              currentPath === item.href || (item.href !== '/admin/' && currentPath.startsWith(item.href)) 
+                ? 'bg-blue-600 text-white' 
+                : 'bg-white text-gray-700 hover:bg-gray-50'
+            }`}
+          >
+            {item.name}
+          </a>
+        ))}
+      </nav>
+    </div>
+    
+    <!-- Admin Content -->
+    <main>
+      <slot />
+    </main>
+  </div>
+</Layout> 
