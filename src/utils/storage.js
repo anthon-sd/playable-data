@@ -2,6 +2,21 @@ import { supabase } from '../db/supabase';
 import matter from 'gray-matter';
 import { marked } from 'marked';
 
+// Configure marked to render h3 headers with bold styling
+const renderer = new marked.Renderer();
+const originalHeadingRenderer = renderer.heading;
+renderer.heading = function (text, level, raw, slugger) {
+  // If this is an h3 header, wrap the text in strong tags
+  if (level === 3) {
+    text = `<strong>${text}</strong>`;
+  }
+  // Call the original renderer with the possibly modified text
+  return originalHeadingRenderer.call(this, text, level, raw, slugger);
+};
+
+// Set up the marked instance with our custom renderer
+marked.use({ renderer });
+
 // Bucket names
 const ARTICLES_BUCKET = 'articles';
 const MEDIA_BUCKET = 'media';
