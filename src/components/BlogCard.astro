@@ -3,6 +3,8 @@ import { formatDate } from '../utils/date';
 
 const { post } = Astro.props;
 const { slug, data } = post;
+// Convert slug to lowercase to ensure consistent URLs
+const lowercaseSlug = slug.toLowerCase();
 const { title, description, pubDate, coverImage, author, topics = [], tags = [] } = data;
 
 // Use topics if available, otherwise fall back to tags
@@ -11,7 +13,7 @@ const postTopics = topics.length > 0 ? topics : tags;
 
 <article class="card card-hover p-0 overflow-hidden">
   {coverImage && (
-    <a href={`/${slug}/`} class="block overflow-hidden h-56">
+    <a href={`/blog/${lowercaseSlug}/`} class="block overflow-hidden h-56">
       <img 
         src={coverImage} 
         alt={`Cover image for ${title}`} 
@@ -33,7 +35,7 @@ const postTopics = topics.length > 0 ? topics : tags;
     )}
     
     <h2 class="text-xl font-bold mb-2 text-black line-clamp-2">
-      <a href={`/${slug}/`} class="hover:text-primary transition">
+      <a href={`/blog/${lowercaseSlug}/`} class="hover:text-primary transition">
         {title}
       </a>
     </h2>
