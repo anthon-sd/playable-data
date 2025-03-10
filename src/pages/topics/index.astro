@@ -17,8 +17,8 @@ try {
 
 // Convert to array and sort by count (descending)
 const sortedTopics = Object.entries(topicCounts)
-  .map(([topic, count]) => ({ topic, count }))
-  .sort((a, b) => b.count - a.count);
+  .map(([topic, count]) => ({ topic, count: count as number }))
+  .sort((a, b) => (b.count as number) - (a.count as number));
 ---
 
 <Layout title="Topics - Playable Data Blog">
@@ -33,13 +33,34 @@ const sortedTopics = Object.entries(topicCounts)
 
   <div class="container-custom py-12">
     <div class="card">
-      <h2 class="text-2xl font-bold text-black mb-6">All Topics</h2>
+      <div class="flex justify-between items-center mb-6">
+        <h2 class="text-2xl font-bold text-black">All Topics</h2>
+        <div class="relative">
+          <input 
+            type="text" 
+            id="topic-search" 
+            placeholder="Search topics..." 
+            class="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-lighter"
+            autocomplete="off"
+          />
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 absolute left-3 top-2.5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" />
+          </svg>
+          <!-- Dropdown menu for search results -->
+          <div id="search-dropdown" class="absolute z-10 mt-1 w-full bg-white border border-gray-300 rounded-lg shadow-lg hidden">
+            <ul id="search-results" class="max-h-60 overflow-y-auto"></ul>
+          </div>
+        </div>
+      </div>
+      
       {sortedTopics.length > 0 ? (
-        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4" id="topics-grid">
           {sortedTopics.map(({ topic, count }) => (
             <a 
               href={`/topics/${topic}/`} 
-              class="flex justify-between items-center p-4 bg-tint-20 hover:bg-tint-50 rounded-lg transition"
+              class="topic-item flex justify-between items-center p-4 bg-tint-20 hover:bg-tint-50 rounded-lg transition"
+              data-topic={topic.toLowerCase()}
+              data-count={count}
             >
               <span class="text-dark-1 font-medium">#{topic}</span>
               <span class="bg-accent-lighter text-primary text-xs px-2 py-1 rounded-full">
@@ -53,6 +74,201 @@ const sortedTopics = Object.entries(topicCounts)
           <p class="text-gray-600">No topics found. Check back soon for new content!</p>
         </div>
       )}
+      <div id="no-results" style="display: none;" class="bg-white p-8 rounded-lg shadow-md text-center mt-4">
+        <p class="text-gray-600">No matching topics found. Try a different search term.</p>
+      </div>
     </div>
   </div>
 </Layout>
+
+<script is:inline>
+  // Create a JSON object with all topics data
+  (function() {
+    console.log("Topic search script started");
+    
+    // Wait a brief moment to ensure DOM is ready
+    setTimeout(function() {
+      const searchInput = document.getElementById('topic-search');
+      const searchDropdown = document.getElementById('search-dropdown');
+      const searchResults = document.getElementById('search-results');
+      const topicItems = document.querySelectorAll('.topic-item');
+      const topicsGrid = document.getElementById('topics-grid');
+      const noResults = document.getElementById('no-results');
+      
+      // Initialize dataLayer if it doesn't exist
+      window.dataLayer = window.dataLayer || [];
+      
+      // Function to push events to dataLayer
+      function pushToDataLayer(eventName, eventParams = {}) {
+        if (typeof window !== 'undefined' && window.dataLayer) {
+          const eventData = {
+            event: eventName,
+            ...eventParams,
+            eventTimestamp: new Date().toISOString()
+          };
+          
+          window.dataLayer.push(eventData);
+          console.debug('[Search Event]', eventData);
+        }
+      }
+      
+      // Create an array of topic objects from the DOM
+      const topics = [];
+      topicItems.forEach(function(item) {
+        topics.push({
+          name: item.getAttribute('data-topic') || '',
+          count: parseInt(item.getAttribute('data-count') || '0', 10),
+          url: item.getAttribute('href') || '#'
+        });
+      });
+      
+      console.log("Topics loaded:", topics.length);
+      
+      if (!searchInput || !searchResults) {
+        console.error("Search elements not found!");
+        return;
+      }
+      
+      // Track when user focuses on search input
+      searchInput.addEventListener('focus', function() {
+        pushToDataLayer('search_initiated', {
+          search_location: 'topics_page',
+          total_topics_available: topics.length
+        });
+        
+        if (searchInput.value.trim() !== '') {
+          searchDropdown.classList.remove('hidden');
+        }
+      });
+      
+      // Track search query after a brief delay
+      let searchTimeout;
+      function trackSearchQuery(query) {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => {
+          if (query && query.length >= 2) {
+            pushToDataLayer('search_query', {
+              search_term: query,
+              search_location: 'topics_page'
+            });
+          }
+        }, 800); // Debounce to avoid excessive events
+      }
+      
+      // Function to filter topics and show in dropdown
+      function filterTopics() {
+        const searchTerm = searchInput.value.trim().toLowerCase();
+        console.log("Search term:", searchTerm);
+        
+        // Track search query
+        trackSearchQuery(searchTerm);
+        
+        if (searchTerm === '') {
+          searchDropdown.classList.add('hidden');
+          
+          // Show all topics in the grid
+          topicItems.forEach(function(item) {
+            item.style.display = '';
+          });
+          
+          if (noResults) noResults.style.display = 'none';
+          return;
+        }
+        
+        // Filter topics for the dropdown
+        const filteredTopics = topics.filter(topic => 
+          topic.name.toLowerCase().includes(searchTerm)
+        );
+        
+        console.log("Filtered topics for dropdown:", filteredTopics.length);
+        
+        // Clear previous results
+        searchResults.innerHTML = '';
+        
+        if (filteredTopics.length > 0) {
+          // Populate dropdown with filtered topics
+          filteredTopics.forEach(function(topic) {
+            const li = document.createElement('li');
+            li.className = 'px-4 py-2 hover:bg-gray-100 cursor-pointer';
+            li.innerHTML = `<span class="font-medium">#${topic.name}</span> <span class="text-xs text-gray-500">(${topic.count} ${topic.count === 1 ? 'article' : 'articles'})</span>`;
+            
+            // Add click event to navigate to topic page and track selection
+            li.addEventListener('click', function() {
+              // Track topic selection from dropdown
+              pushToDataLayer('topic_selected', {
+                search_term: searchTerm,
+                selected_topic: topic.name,
+                topic_article_count: topic.count,
+                search_location: 'topics_page',
+                selection_type: 'dropdown'
+              });
+              
+              window.location.href = `/topics/${topic.name}/`;
+            });
+            
+            searchResults.appendChild(li);
+          });
+          
+          // Show dropdown
+          searchDropdown.classList.remove('hidden');
+          
+          // Also filter the grid items
+          topicItems.forEach(function(item) {
+            const topic = item.getAttribute('data-topic') || '';
+            if (topic.includes(searchTerm)) {
+              item.style.display = '';
+            } else {
+              item.style.display = 'none';
+            }
+          });
+          
+          if (noResults) noResults.style.display = 'none';
+        } else {
+          // No matches
+          searchDropdown.classList.add('hidden');
+          
+          // Hide all grid items
+          topicItems.forEach(function(item) {
+            item.style.display = 'none';
+          });
+          
+          // Track no results event
+          pushToDataLayer('search_no_results', {
+            search_term: searchTerm,
+            search_location: 'topics_page'
+          });
+          
+          if (noResults) noResults.style.display = 'block';
+        }
+      }
+      
+      // Handle input events
+      searchInput.addEventListener('input', filterTopics);
+      
+      // Close dropdown when clicking outside
+      document.addEventListener('click', function(event) {
+        if (!searchInput.contains(event.target) && !searchDropdown.contains(event.target)) {
+          searchDropdown.classList.add('hidden');
+        }
+      });
+      
+      // Track direct clicks on topic items in the grid
+      topicItems.forEach(function(item) {
+        item.addEventListener('click', function() {
+          const topic = this.getAttribute('data-topic') || '';
+          const count = parseInt(this.getAttribute('data-count') || '0', 10);
+          
+          pushToDataLayer('topic_selected', {
+            selected_topic: topic,
+            topic_article_count: count,
+            search_location: 'topics_page',
+            selection_type: 'grid',
+            search_active: searchInput.value.trim() !== ''
+          });
+        });
+      });
+      
+      console.log("Event listeners added");
+    }, 100);
+  })();
+</script>
