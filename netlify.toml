@@ -21,10 +21,10 @@
   status = 301
   force = true
 
-# Handle API routes first (before the catch-all)
+# Enable API endpoint handling for serverless functions
 [[redirects]]
   from = "/api/*"
-  to = "/.netlify/functions/entry/:splat"
+  to = "/.netlify/functions/entry/:splat" 
   status = 200
   force = true
 
@@ -33,7 +33,7 @@
   from = "/*"
   to = "/index.html"
   status = 200
-  force = false # Changed to false so it doesn't override API routes
+  force = false # Don't override API routes
 
 # Force HTTPS
 [[redirects]]
