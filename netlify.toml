@@ -21,11 +21,19 @@
   status = 301
   force = true
 
-# This ensures that all routes are handled properly
+# Handle API routes first (before the catch-all)
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/entry/:splat"
+  status = 200
+  force = true
+
+# This ensures that all static routes are handled properly
 [[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
+  force = false # Changed to false so it doesn't override API routes
 
 # Force HTTPS
 [[redirects]]

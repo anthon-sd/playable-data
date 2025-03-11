@@ -1,6 +1,10 @@
 import { supabase } from '../../../db/supabase';
 
-export async function post({ request }) {
+// Explicitly mark as server-side only
+export const prerender = false;
+
+// Use uppercase POST instead of lowercase post
+export async function POST({ request }) {
   try {
     // Parse the request body to get credentials
     const data = await request.json();
@@ -16,7 +20,10 @@ export async function post({ request }) {
         {
           status: 400,
           headers: {
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Methods': 'POST, OPTIONS',
+            'Access-Control-Allow-Headers': 'Content-Type'
           }
         }
       );
@@ -33,7 +40,10 @@ export async function post({ request }) {
         {
           status: 503,
           headers: {
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Methods': 'POST, OPTIONS',
+            'Access-Control-Allow-Headers': 'Content-Type'
           }
         }
       );
@@ -56,7 +66,10 @@ export async function post({ request }) {
         {
           status: 401,
           headers: {
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Methods': 'POST, OPTIONS',
+            'Access-Control-Allow-Headers': 'Content-Type'
           }
         }
       );
@@ -73,6 +86,9 @@ export async function post({ request }) {
         status: 200,
         headers: {
           'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'POST, OPTIONS',
+          'Access-Control-Allow-Headers': 'Content-Type',
           'Set-Cookie': `supabase-auth-token=${authData.session.access_token}; Path=/; HttpOnly; SameSite=Strict; Max-Age=3600`
         }
       }
@@ -88,9 +104,25 @@ export async function post({ request }) {
       {
         status: 500,
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'POST, OPTIONS',
+          'Access-Control-Allow-Headers': 'Content-Type'
         }
       }
     );
   }
+}
+
+// Add OPTIONS handler for CORS preflight requests
+export function OPTIONS() {
+  return new Response(null, {
+    status: 204,
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type',
+      'Access-Control-Max-Age': '86400'
+    }
+  });
 } 
