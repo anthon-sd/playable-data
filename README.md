@@ -1,4 +1,4 @@
-# Playable Data Blog
+# Playable Data
 
 A modern, serverless blog platform built with Astro and Supabase, designed for gaming analytics content.
 
