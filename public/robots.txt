@@ -1,17 +1,23 @@
-# Playable Data robots.txt
-
-# Allow all crawlers
+# robots.txt for playabledata.io
 User-agent: *
 Allow: /
 
-# Sitemap location
+# Sitemap
 Sitemap: https://playabledata.io/sitemap.xml
 
-# Disallow admin or non-production pages
-Disallow: /admin/
-Disallow: /draft/
-Disallow: /preview/
-Disallow: /maintenance/
-
-# Optimize crawl rate
+# Rate limiting
 Crawl-delay: 1
+
+# Allow specific bots
+User-agent: Googlebot
+Allow: /
+
+User-agent: bingbot
+Allow: /
+
+User-agent: Twitterbot
+Allow: /
+
+# Admin area disallow
+User-agent: *
+Disallow: /admin/

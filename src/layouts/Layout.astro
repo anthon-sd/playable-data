@@ -42,6 +42,16 @@ const pageType = currentPath.includes('/blog/')
     <link rel="icon" type="image/png" href="/favicon.png" />
     <meta name="generator" content={Astro.generator} />
     
+    <!-- SEO meta tags -->
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <meta name="robots" content="index, follow" />
+    <link rel="canonical" href={canonicalUrl} />
+    
+    <!-- Language and locale -->
+    <meta property="og:locale" content="en_US" />
+    <meta http-equiv="Content-Language" content="en" />
+    
     <!-- Preconnect to important domains for performance -->
     <link rel="preconnect" href="https://www.googletagmanager.com">
     <link rel="preconnect" href="https://www.google-analytics.com">
@@ -179,10 +189,6 @@ const pageType = currentPath.includes('/blog/')
     })(window,document,'script','dataLayer','GTM-NBP89PNV');</script>
     <!-- End Google Tag Manager -->
     
-    <title>{title}</title>
-    <meta name="description" content={description} />
-    <link rel="canonical" href={canonicalUrl} />
-    
     <!-- Structured data for improved search results -->
     <script type="application/ld+json">
       {
@@ -205,8 +211,13 @@ const pageType = currentPath.includes('/blog/')
           }
         },
         "url": canonicalUrl,
+        "mainEntityOfPage": {
+          "@type": "WebPage",
+          "@id": canonicalUrl
+        },
         ...(publishDate && {"datePublished": publishDate.toISOString()}),
-        ...(modifiedDate && {"dateModified": modifiedDate.toISOString()})
+        ...(modifiedDate && {"dateModified": modifiedDate.toISOString()}),
+        ...(type === "article" && {"articleSection": "Gaming Analytics"})
       }
     </script>
     
@@ -216,9 +227,12 @@ const pageType = currentPath.includes('/blog/')
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     <meta property="og:image" content={new URL(image, Astro.site || Astro.url)} />
+    <meta property="og:image:alt" content={title} />
     <meta property="og:site_name" content="Playable Data" />
     {publishDate && <meta property="article:published_time" content={publishDate.toISOString()} />}
     {modifiedDate && <meta property="article:modified_time" content={modifiedDate.toISOString()} />}
+    {type === 'article' && <meta property="article:section" content="Gaming Analytics" />}
+    {type === 'article' && <meta property="article:publisher" content="https://playabledata.io" />}
 
     <!-- Twitter -->
     <meta property="twitter:card" content="summary_large_image" />
@@ -226,6 +240,8 @@ const pageType = currentPath.includes('/blog/')
     <meta property="twitter:title" content={title} />
     <meta property="twitter:description" content={description} />
     <meta property="twitter:image" content={new URL(image, Astro.site || Astro.url)} />
+    <meta name="twitter:label1" content="Reading time" />
+    <meta name="twitter:data1" content={type === 'article' ? '5 minutes' : '2 minutes'} />
     
     <!-- Fonts with display swap for better performance -->
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'" />

@@ -6,6 +6,7 @@ import { marked } from 'marked';
 
 export async function getStaticPaths() {
   try {
+    console.log('Building blog post routes for static generation...');
     // Get all articles from storage (using our updated function)
     const articles = await getArticles();
     
@@ -29,12 +30,27 @@ export async function getStaticPaths() {
     }
 
     console.log(`Generating paths for ${articles.length} articles`);
+    
+    // Make sure all articles have a valid slug
+    const validArticles = articles.filter(article => {
+      if (!article.slug) {
+        console.warn(`Article with title "${article.title}" has no slug, skipping`);
+        return false;
+      }
+      return true;
+    });
+    
     // Generate paths with lowercase slugs for consistency
-    return articles.map(article => ({
-      // Ensure slug is lowercase for URL consistency
-      params: { slug: article.slug.toLowerCase() },
-      props: { article },
-    }));
+    return validArticles.map(article => {
+      // Ensure slug is lowercase and URI-safe for URL consistency
+      const normalizedSlug = article.slug.toLowerCase().trim();
+      console.log(`Generated route for: /blog/${normalizedSlug}/`);
+      
+      return {
+        params: { slug: normalizedSlug },
+        props: { article },
+      };
+    });
   } catch (error) {
     console.error("Error generating static paths:", error);
     return [
@@ -65,9 +81,14 @@ const { article } = Astro.props;
 // The content should already be HTML from our storage processing
 const htmlContent = article?.content || '';
 
-// Date handling
-const pubDate = article.created_at || article.pubDate;
-const updatedDate = article.updated_at || article.updatedDate;
+// Date handling with fallbacks for SEO consistency
+const pubDate = new Date(article.created_at || article.pubDate || new Date());
+const updatedDate = article.updated_at || article.updatedDate ? new Date(article.updated_at || article.updatedDate) : undefined;
+
+// Prepare article metadata with fallbacks for SEO
+const title = article.title || `Article - ${normalizedSlug}`;
+const description = article.description || `Learn more about gaming analytics in this article from Playable Data.`;
+const tags = article.tags || [];
 
 // Special override for the Monetisation article
 let authorName = 'Playable Data Team';
@@ -96,11 +117,15 @@ if (article.slug && article.slug.includes('Mastering-Monetisation')) {
   console.log('Found string author name:', authorName);
 }
 
+// Cover image handling with fallback for SEO
+const coverImage = article.cover_image || '/images/og-image.jpg';
+
 // Debug output
 console.log('Article slug:', article.slug);
 console.log('Using author name:', authorName);
 console.log('Using author ID:', authorId);
 console.log('Using author image:', authorImage);
+console.log('Using cover image:', coverImage);
 
 // Extra verification for author image URL
 if (authorImage && typeof authorImage === 'string' && authorImage.includes('://')) {
@@ -113,17 +138,17 @@ if (authorImage && typeof authorImage === 'string' && authorImage.includes('://'
 <BlogPost post={{
   slug: article.slug,
   data: {
-    title: article.title,
-    description: article.description,
-    pubDate: new Date(pubDate),
-    updatedDate: updatedDate ? new Date(updatedDate) : undefined,
-    coverImage: article.cover_image,
+    title: title,
+    description: description,
+    pubDate: pubDate,
+    updatedDate: updatedDate,
+    coverImage: coverImage,
     author: {
       name: authorName,
       image: authorImage,
       id: authorId
     },
-    tags: article.tags || []
+    tags: tags
   },
   body: article.content
 }}>

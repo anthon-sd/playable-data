@@ -5,7 +5,9 @@ export async function GET() {
     let articles = [];
     
     try {
+      console.log('Fetching articles for sitemap...');
       articles = await getArticles();
+      console.log(`Successfully fetched ${articles.length} articles for sitemap`);
     } catch (error) {
       console.error('Error fetching articles for sitemap:', error);
       articles = [];
@@ -17,6 +19,21 @@ export async function GET() {
     const allTags = [...new Set(articles.flatMap(post => post.tags || []))];
     const allTopics = [...new Set(articles.flatMap(post => post.topics || []))];
     
+    console.log(`Sitemap will include: ${articles.length} articles, ${allTopics.length} topics, ${allTags.length} tags`);
+    
+    // Make sure dates are in the correct format
+    const formatDate = (dateString) => {
+      try {
+        const date = new Date(dateString);
+        if (isNaN(date.getTime())) {
+          return new Date().toISOString();
+        }
+        return date.toISOString();
+      } catch (e) {
+        return new Date().toISOString();
+      }
+    };
+    
     // Prioritize and set change frequency for different content types
     const pages = [
       // Main pages with high priority and frequent changes
@@ -25,12 +42,15 @@ export async function GET() {
       { url: '/topics/', priority: '0.8', changefreq: 'weekly', lastmod: new Date().toISOString() },
       
       // Articles with medium-high priority
-      ...articles.map(article => ({
-        url: `/blog/${article.slug.toLowerCase()}/`,
-        priority: article.featured === true || article.featured === 'true' ? '0.8' : '0.7',
-        changefreq: 'monthly',
-        lastmod: article.updated_at || article.created_at
-      })),
+      ...articles.map(article => {
+        console.log(`Adding article to sitemap: /blog/${article.slug.toLowerCase()}/`);
+        return {
+          url: `/blog/${article.slug.toLowerCase()}/`,
+          priority: article.featured === true || article.featured === 'true' ? '0.8' : '0.7',
+          changefreq: 'monthly',
+          lastmod: formatDate(article.updated_at || article.created_at)
+        };
+      }),
       
       // Topic pages
       ...allTopics.map(topic => ({
@@ -58,6 +78,8 @@ export async function GET() {
       uniqueUrls.add(page.url);
       return true;
     });
+    
+    console.log(`Sitemap contains ${uniquePages.length} unique URLs`);
     
     // Generate sitemap XML with priority and change frequency
     const sitemap = `<?xml version="1.0" encoding="UTF-8"?>

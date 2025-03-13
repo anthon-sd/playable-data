@@ -425,21 +425,7 @@ export async function getAllArticles() {
       return [];
     }
     
-    // Test our author image parsing with a sample markdown
-    const testMarkdown = `---
-title: Test Article with Author Image
-description: This is a test article to verify author image handling
-pubDate: 2023-06-15
-author: Test Author
-author_id: test-123
-author_image: https://example.com/test-author-image.jpg
-topics: [test, image]
----
-
-# Test Article`;
-
-    console.log('Running author image parsing test with new metadata format...');
-    testAuthorImageParsing(testMarkdown);
+    console.log('Beginning article collection from storage bucket...');
     
     await initializeStorage();
     
@@ -460,6 +446,11 @@ topics: [test, image]
     const mdFiles = files.filter(file => file.name.endsWith('.md'));
     console.log(`Found ${mdFiles.length} markdown files in articles bucket. Processing files...`);
     
+    // Log each filename being processed
+    mdFiles.forEach(file => {
+      console.log(`Will process: ${file.name}`);
+    });
+    
     const articles = await Promise.all(
       mdFiles.map(async file => {
         try {
@@ -472,23 +463,14 @@ topics: [test, image]
           // Parse the markdown content with frontmatter
           const { metadata, html } = parseMarkdown(content);
           
-          // Special debug logging for monetization article
-          if (file.name.includes('Monetisation') || file.name.includes('monetisation')) {
-            console.log('MONETIZATION ARTICLE FOUND!');
-            console.log('Raw metadata:', JSON.stringify(metadata, null, 2));
-            console.log('Author from metadata:', JSON.stringify(metadata.author, null, 2));
-          }
-          
           // Generate a slug from the filename (removing .md extension)
           const slug = file.name.replace(/\.md$/, '');
           
           // Normalize author information
           const normalizedAuthor = normalizeAuthor(metadata.author, metadata);
           
-          // Additional debug for monetization article
-          if (file.name.includes('Monetisation') || file.name.includes('monetisation')) {
-            console.log('Normalized author:', JSON.stringify(normalizedAuthor, null, 2));
-          }
+          // Log successful processing
+          console.log(`Successfully processed article: ${slug} (${metadata.title || 'No title'})`);
           
           // Ensure required fields exist with sensible defaults
           return {
@@ -536,7 +518,12 @@ topics: [test, image]
     const validArticles = articles.filter(article => 
       article && article.status !== 'draft' && article.title !== 'Error parsing document'
     );
-    console.log(`Successfully processed ${validArticles.length} valid articles from storage`);
+    console.log(`Successfully processed ${validArticles.length} valid articles out of ${articles.length} total from storage`);
+    
+    // Log details of each valid article for sitemap debugging
+    validArticles.forEach(article => {
+      console.log(`Article ready for sitemap: ${article.slug} - ${article.title} - Last modified: ${article.updatedDate || article.pubDate}`);
+    });
     
     // Sort articles by date, newest first
     return validArticles.sort((a, b) => {
