@@ -359,7 +359,7 @@ body {
 }
 
 .nav-link:hover {
-  color: var(--primary);
+  color: var(--accent);
 }
 
 .nav-link-active {
