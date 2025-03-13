@@ -1,5 +1,6 @@
 ---
 import { formatDate } from '../utils/date';
+import OptimizedImage from './OptimizedImage.astro';
 
 const { post } = Astro.props;
 const { slug, data } = post;
@@ -13,12 +14,16 @@ const postTopics = topics.length > 0 ? topics : tags;
 
 <article class="card card-hover p-0 overflow-hidden">
   {coverImage && (
-    <a href={`/blog/${lowercaseSlug}/`} class="block overflow-hidden h-56">
-      <img 
-        src={coverImage} 
-        alt={`Cover image for ${title}`} 
-        class="w-full h-full object-cover transition-transform hover:scale-105"
-      />
+    <a href={`/blog/${lowercaseSlug}/`} class="block overflow-hidden h-48">
+      <div class="w-full h-full overflow-hidden">
+        <OptimizedImage 
+          src={coverImage} 
+          alt={`Cover image for ${title}`} 
+          class="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
+          width={600}
+          height={300}
+        />
+      </div>
     </a>
   )}
   

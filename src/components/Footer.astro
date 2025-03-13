@@ -25,19 +25,19 @@ const socialLinks = [
 ];
 ---
 
-<footer class="footer">
+<footer class="footer bg-black py-12 text-white">
   <div class="container-custom">
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
       <div class="col-span-1 lg:col-span-2">
         <div class="flex items-center">
-          <span class="text-2xl font-bold text-black">{companyName}</span>
+          <span class="text-2xl font-bold text-white">{companyName}</span>
         </div>
-        <p class="mt-4 text-black max-w-md">
+        <p class="mt-4 text-gray-300 max-w-md">
           Join us as we explore the art & science of game analytics, optimisation and the latest game development trends.
         </p>
         <div class="mt-6 flex space-x-6">
           {socialLinks.map(social => (
-            <a href={social.href} class="text-black hover:text-primary transition" target="_blank" rel="noopener noreferrer">
+            <a href={social.href} class="text-gray-300 hover:text-accent-lighter transition" target="_blank" rel="noopener noreferrer">
               <span class="sr-only">{social.name}</span>
               {social.icon === 'discord' && (
                 <svg class="h-6 w-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -56,11 +56,11 @@ const socialLinks = [
       
       {footerLinks.map(column => (
         <div>
-          <h3 class="text-sm font-semibold text-black tracking-wider uppercase">{column.title}</h3>
+          <h3 class="text-sm font-semibold text-white tracking-wider uppercase">{column.title}</h3>
           <ul class="mt-4 space-y-4">
             {column.links.map(link => (
               <li>
-                <a href={link.href} class="text-base text-black hover:text-primary transition">{link.name}</a>
+                <a href={link.href} class="text-gray-300 hover:text-accent-lighter transition">{link.name}</a>
               </li>
             ))}
           </ul>
@@ -68,9 +68,9 @@ const socialLinks = [
       ))}
     </div>
     
-    <div class="mt-12 border-t border-gray-1 pt-8">
+    <div class="mt-12 border-t border-gray-700 pt-8">
       <div class="flex flex-col md:flex-row justify-between items-center">
-        <p class="text-base text-black">
+        <p class="text-base text-gray-300">
           &copy; {currentYear} {companyName}. All rights reserved.
         </p>
       </div>

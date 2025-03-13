@@ -89,12 +89,12 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background-color: var(--primary);
+  background-color: var(--accent);
   border-radius: var(--radius-full);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background-color: var(--primary-dark);
+  background-color: var(--accent-medium);
 }
 
 /* Animations */
@@ -676,7 +676,6 @@ body {
 
 /* Footer specific styles */
 .footer {
-  background-color: white;
   border-top: 1px solid #e5e7eb;
   padding-top: 2rem;
   padding-bottom: 2rem;

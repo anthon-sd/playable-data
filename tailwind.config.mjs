@@ -44,6 +44,12 @@ export default {
                 color: theme('colors.primary.700'),
               },
             },
+            img: {
+              borderRadius: theme('borderRadius.lg'),
+              boxShadow: theme('boxShadow.md'),
+              maxWidth: '100%',
+              margin: '2rem auto',
+            },
             code: {
               backgroundColor: theme('colors.gray.100'),
               padding: '0.2em 0.4em',
