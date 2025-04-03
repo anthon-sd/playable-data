@@ -40,6 +40,8 @@
 </div>
 
 <script is:inline>
+  import { trackFormSubmission, trackOutboundLink } from '../utils/gtm';
+  
   document.addEventListener('DOMContentLoaded', function() {
     const form = document.getElementById('newsletter-form');
     const messageEl = document.getElementById('newsletter-message');
@@ -58,13 +60,10 @@
         }
         
         try {
-          // Push form submission event to dataLayer
-          window.dataLayer = window.dataLayer || [];
-          dataLayer.push({
-            'event': 'formSubmission',
-            'formType': 'newsletter',
-            'formLocation': window.location.pathname,
-            'userEmail': email // Note: In production, consider hashing for privacy
+          // Track form submission attempt
+          trackFormSubmission('newsletter', false, {
+            formId: form.id,
+            userEmail: email
           });
           
           // Save to Supabase via API endpoint
@@ -95,6 +94,12 @@
             messageEl.textContent = result.message;
           }
           
+          // Track form submission result
+          trackFormSubmission('newsletter', result.success, {
+            formId: form.id,
+            userEmail: email
+          });
+          
           // If success, clear the form
           if (result.success) {
             form.reset();
@@ -107,6 +112,12 @@
             messageEl.className = 'mt-3 text-sm text-red-400';
             messageEl.textContent = 'An error occurred. Please try again later.';
           }
+          
+          // Track form submission error
+          trackFormSubmission('newsletter', false, {
+            formId: form.id,
+            error: error.message
+          });
         } finally {
           // Re-enable button
           if (submitButton) {
@@ -122,13 +133,9 @@
       link.addEventListener('click', function(e) {
         const url = this.getAttribute('href');
         const linkText = this.textContent;
+        const linkContext = this.closest('section')?.id || '';
         
-        window.dataLayer = window.dataLayer || [];
-        dataLayer.push({
-          'event': 'outboundLinkClick',
-          'outboundUrl': url,
-          'linkText': linkText
-        });
+        trackOutboundLink(url, linkText, linkContext);
       });
     });
   });

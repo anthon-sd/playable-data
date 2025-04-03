@@ -33,36 +33,73 @@ export const trackArticleView = (article) => {
  * Track form submission events
  * @param {string} formType - Type of form (e.g., 'newsletter', 'contact')
  * @param {boolean} success - Whether submission was successful
+ * @param {Object} additionalData - Additional form data to track
  */
-export const trackFormSubmission = (formType, success) => {
-  pushEvent({
+export const trackFormSubmission = (formType, success, additionalData = {}) => {
+  const dataLayer = window.dataLayer = window.dataLayer || [];
+  
+  // Base form submission event
+  const eventData = {
     event: 'formSubmission',
     formType: formType,
-    formSuccess: success
-  });
+    formSuccess: success,
+    formLocation: window.location.pathname,
+    ...additionalData
+  };
+  
+  // Remove sensitive data before tracking
+  delete eventData.userEmail;
+  delete eventData.password;
+  delete eventData.creditCard;
+  
+  dataLayer.push(eventData);
 };
 
 /**
  * Track outbound link clicks
  * @param {string} url - The URL being clicked
  * @param {string} linkText - The text of the link
+ * @param {string} linkContext - Optional context of where the link was clicked
  */
-export const trackOutboundLink = (url, linkText) => {
+export const trackOutboundLink = (url, linkText, linkContext = '') => {
+  // Ignore links to the current domain
+  if (url && new URL(url).hostname === window.location.hostname) return;
+  
   pushEvent({
     event: 'outboundLinkClick',
     outboundUrl: url,
-    linkText: linkText
+    linkText: linkText?.trim() || '',
+    linkContext: linkContext
   });
 };
 
 /**
  * Track scroll depth for content engagement measurement
  * @param {number} depth - Scroll depth percentage (25, 50, 75, 100)
+ * @param {string} context - Optional context (e.g., 'article', 'page')
+ * @param {string} contentId - Optional content ID (e.g., article slug)
  */
-export const trackScrollDepth = (depth) => {
+export const trackScrollDepth = (depth, context = 'page', contentId = '') => {
   pushEvent({
     event: 'scrollDepth',
-    scrollDepthValue: depth
+    scrollDepthValue: depth,
+    scrollContext: context,
+    contentId: contentId
+  });
+};
+
+/**
+ * Track time spent on page
+ * @param {number} seconds - Time spent in seconds
+ * @param {string} context - Optional context (e.g., 'article', 'page')
+ * @param {string} contentId - Optional content ID (e.g., article slug)
+ */
+export const trackTimeOnPage = (seconds, context = 'page', contentId = '') => {
+  pushEvent({
+    event: 'timeOnPage',
+    timeOnPageValue: seconds,
+    timeContext: context,
+    contentId: contentId
   });
 };
 
@@ -91,5 +128,70 @@ export const trackSocialShare = (platform, contentType, contentId) => {
     sharePlatform: platform,
     shareContentType: contentType,
     shareContentId: contentId
+  });
+};
+
+/**
+ * Initialize all tracking
+ * @param {Object} options - Tracking options
+ */
+export const initTracking = (options = {}) => {
+  if (typeof window === 'undefined') return;
+  
+  const dataLayer = window.dataLayer = window.dataLayer || [];
+  
+  // Track scroll depth
+  const scrollDepths = [25, 50, 75, 100];
+  let trackedDepths = [];
+  
+  function calculateScrollDepth() {
+    const windowHeight = window.innerHeight;
+    const documentHeight = document.documentElement.scrollHeight;
+    const scrollTop = window.scrollY;
+    
+    const scrollPercentage = Math.round((scrollTop / (documentHeight - windowHeight)) * 100);
+    
+    scrollDepths.forEach(depth => {
+      if (scrollPercentage >= depth && !trackedDepths.includes(depth)) {
+        trackedDepths.push(depth);
+        trackScrollDepth(depth, options.context, options.contentId);
+      }
+    });
+  }
+  
+  // Track time on page
+  const timeIntervals = [10, 30, 60, 120, 300]; // in seconds
+  let trackedIntervals = [];
+  let startTime = new Date();
+  
+  function trackTimeInterval() {
+    const secondsOnPage = Math.floor((new Date() - startTime) / 1000);
+    
+    timeIntervals.forEach(interval => {
+      if (secondsOnPage >= interval && !trackedIntervals.includes(interval)) {
+        trackedIntervals.push(interval);
+        trackTimeOnPage(interval, options.context, options.contentId);
+      }
+    });
+  }
+  
+  // Set up event listeners
+  document.addEventListener('DOMContentLoaded', () => {
+    // Scroll tracking
+    window.addEventListener('scroll', calculateScrollDepth);
+    
+    // Time tracking
+    setInterval(trackTimeInterval, 5000);
+    
+    // Outbound link tracking
+    document.querySelectorAll('a[href^="http"]').forEach(link => {
+      link.addEventListener('click', (e) => {
+        const url = link.getAttribute('href');
+        const linkText = link.textContent?.trim() || '';
+        const linkContext = link.closest('section')?.id || '';
+        
+        trackOutboundLink(url, linkText, linkContext);
+      });
+    });
   });
 }; 

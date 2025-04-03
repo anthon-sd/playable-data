@@ -11,7 +11,7 @@
     Get our latest insights and updates delivered straight to your inbox.
   </p>
   
-  <form class="newsletter-form">
+  <form class="newsletter-form" id="sidebar-newsletter-form">
     <label for="sidebar-email" class="sr-only">Email address</label>
     <input
       id="sidebar-email"
@@ -31,7 +31,7 @@
     </button>
   </form>
   
-  <div class="sidebar-message mt-3 text-sm" style="display: none;"></div>
+  <div class="sidebar-message mt-3 text-sm" style="display: none;" id="sidebar-newsletter-message"></div>
   
   <p class="mt-3 text-xs text-accent-lighter">
     By subscribing, you agree to our <a href="/privacy-policy" class="font-medium underline">Privacy Policy</a>.
@@ -39,20 +39,18 @@
 </div>
 
 <script is:inline>
+  import { trackFormSubmission } from '../utils/gtm';
+  
   document.addEventListener('DOMContentLoaded', function() {
-    // Get all sidebar newsletter forms (there might be multiple on a page)
-    const forms = document.querySelectorAll('.sidebar-newsletter .newsletter-form');
+    const form = document.getElementById('sidebar-newsletter-form');
+    const messageEl = document.getElementById('sidebar-newsletter-message');
     
-    forms.forEach((form, index) => {
+    if (form) {
       form.addEventListener('submit', async function(e) {
         e.preventDefault();
         
-        const emailInput = this.querySelector('input[type="email"]');
-        if (!emailInput) return;
-        
-        const email = emailInput.value;
-        const submitButton = this.querySelector('button[type="submit"]');
-        const messageEl = this.closest('.sidebar-newsletter').querySelector('.sidebar-message');
+        const email = document.getElementById('sidebar-email').value;
+        const submitButton = form.querySelector('button[type="submit"]');
         
         // Disable button and show loading state
         if (submitButton) {
@@ -61,13 +59,10 @@
         }
         
         try {
-          // Push form submission event to dataLayer
-          window.dataLayer = window.dataLayer || [];
-          dataLayer.push({
-            'event': 'formSubmission',
-            'formType': 'sidebar_newsletter',
-            'formLocation': window.location.pathname,
-            'userEmail': email
+          // Track form submission attempt
+          trackFormSubmission('sidebar_newsletter', false, {
+            formId: form.id,
+            userEmail: email
           });
           
           // Save to Supabase via API endpoint
@@ -98,6 +93,12 @@
             messageEl.textContent = result.message;
           }
           
+          // Track form submission result
+          trackFormSubmission('sidebar_newsletter', result.success, {
+            formId: form.id,
+            userEmail: email
+          });
+          
           // If success, clear the form
           if (result.success) {
             this.reset();
@@ -110,6 +111,12 @@
             messageEl.className = 'mt-3 text-sm text-red-400 sidebar-message';
             messageEl.textContent = 'An error occurred. Please try again later.';
           }
+          
+          // Track form submission error
+          trackFormSubmission('sidebar_newsletter', false, {
+            formId: form.id,
+            error: error.message
+          });
         } finally {
           // Re-enable button
           if (submitButton) {
@@ -118,7 +125,7 @@
           }
         }
       });
-    });
+    }
   });
 </script>
 
