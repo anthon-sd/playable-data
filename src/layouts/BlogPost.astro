@@ -225,7 +225,7 @@ const formattedUpdatedDate = updatedDate ? formatDate(updatedDate) : null;
     <!-- Hero section with cover image if available -->
     {coverImage && (
       <div class="relative w-full max-w-5xl mx-auto overflow-hidden mb-6 pt-8">
-        <div class="rounded-lg overflow-hidden shadow-md">
+        <div class="rounded-lg overflow-hidden shadow-md px-4 md:px-0">
           <OptimizedImage 
             src={coverImage} 
             alt={`Cover image for ${title}`}
@@ -245,54 +245,53 @@ const formattedUpdatedDate = updatedDate ? formatDate(updatedDate) : null;
         <h1 class="text-3xl md:text-4xl font-bold text-black mb-4">{title}</h1>
         
         <!-- Article metadata with proper semantic markup -->
-        <div class="flex flex-wrap items-center text-gray-600 mb-6 gap-2 md:gap-4">
+        <div class="flex flex-col gap-2 md:gap-3 mb-6">
           <!-- Author information with structured microdata -->
           <div class="flex items-center" itemprop="author" itemscope itemtype="https://schema.org/Person">
             {authorImage && (
               <img 
                 src={authorImage} 
                 alt={`Avatar for ${authorName}`} 
-                class="w-10 h-10 rounded-full mr-3 object-cover"
+                class="w-8 h-8 md:w-10 md:h-10 rounded-full mr-2 md:mr-3 object-cover"
                 itemprop="image"
                 loading="eager"
                 width="40"
                 height="40"
               />
             )}
-            <span itemprop="name" class="font-medium">{authorName}</span>
+            <span itemprop="name" class="font-medium text-sm md:text-base">{authorName}</span>
           </div>
           
-          <span class="w-1.5 h-1.5 rounded-full bg-gray-400" aria-hidden="true"></span>
-          
-          <!-- Publication date with machine-readable time -->
-          <time datetime={pubDate.toISOString()} itemprop="datePublished">
-            {formattedPubDate}
-          </time>
-          
-          {updatedDate && (
-            <>
-              <span class="w-1.5 h-1.5 rounded-full bg-gray-400" aria-hidden="true"></span>
-              <span class="text-sm">
-                Updated: <time datetime={updatedDate.toISOString()} itemprop="dateModified">
-                  {formattedUpdatedDate}
-                </time>
-              </span>
-            </>
-          )}
-          
-          <span class="w-1.5 h-1.5 rounded-full bg-gray-400" aria-hidden="true"></span>
-          
-          <!-- Reading time estimate -->
-          <span class="text-sm">{readingTime} min read</span>
+          <!-- Date and read time info -->
+          <div class="flex items-center text-gray-600 text-sm gap-2 md:gap-4">
+            {updatedDate ? (
+              <>
+                <span>
+                  Updated: <time datetime={updatedDate.toISOString()} itemprop="dateModified">
+                    {formattedUpdatedDate}
+                  </time>
+                </span>
+              </>
+            ) : (
+              <time datetime={pubDate.toISOString()} itemprop="datePublished">
+                {formattedPubDate}
+              </time>
+            )}
+            
+            <span class="text-gray-400">•</span>
+            
+            <!-- Reading time estimate -->
+            <span>{readingTime} min read</span>
+          </div>
         </div>
         
         <!-- Article tags with proper semantic markup -->
         {tags && tags.length > 0 && (
-          <div class="flex flex-wrap gap-2 mb-4">
+          <div class="flex flex-wrap gap-2 mb-2">
             {tags.map(tag => (
               <a 
                 href={`/topics/${tag.toLowerCase()}/`} 
-                class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-accent/10 text-accent hover:bg-accent/20 transition-colors"
+                class="inline-flex items-center px-3 py-1.5 rounded-md text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors"
               >
                 #{tag}
               </a>
