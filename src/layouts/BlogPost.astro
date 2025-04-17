@@ -303,7 +303,7 @@ const formattedUpdatedDate = updatedDate ? formatDate(updatedDate) : null;
       <!-- Main article content with proper semantic markup -->
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
         <!-- Article content in main element -->
-        <main class="lg:col-span-8 prose prose-lg max-w-none prose-headings:font-bold prose-a:text-accent article-content" itemprop="articleBody">
+        <main class="lg:col-span-8 prose prose-lg max-w-none prose-headings:font-bold prose-headings:text-black prose-a:text-accent prose-p:text-black prose-p:leading-normal prose-li:text-black article-content" itemprop="articleBody">
           <slot />
           
           <!-- Social sharing section -->
@@ -456,6 +456,30 @@ const formattedUpdatedDate = updatedDate ? formatDate(updatedDate) : null;
   .article-content :global(figure img) {
     margin-top: 0;
     margin-bottom: 0;
+  }
+  
+  /* Consistent spacing for all text elements */
+  .article-content :global(p),
+  .article-content :global(ul),
+  .article-content :global(ol),
+  .article-content :global(blockquote),
+  .article-content :global(pre),
+  .article-content :global(hr) {
+    margin-top: 0.75em;
+    margin-bottom: 0.75em;
+  }
+
+  /* Adjust list item spacing */
+  .article-content :global(li) {
+    margin-top: 0.25em;
+    margin-bottom: 0.25em;
+  }
+
+  /* Ensure consistent line height across all text elements */
+  .article-content :global(p),
+  .article-content :global(li),
+  .article-content :global(blockquote) {
+    line-height: 1.5;
   }
   
   /* For larger screen sizes, limit the maximum width to match the cover image */
